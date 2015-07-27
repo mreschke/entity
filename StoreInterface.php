@@ -12,23 +12,30 @@ interface StoreInterface
 	/**
 	 * Set a new select statement
 	 * @param  array|func_get_args $columns
-	 * @return void
+	 * @return $this
 	 */
 	public function select($columns);
+
+	/**
+	 * Add additional select(s) to the query
+	 * @param  array
+	 * @return $this
+	 */
+	public function addSelect($columns);
 
 	/**
 	 * Add a where clause to the query
 	 * @param  string  $column
 	 * @param  string  $operator
 	 * @param  mixed   $value
-	 * @return void
+	 * @return $this
 	 */
 	public function where($column, $operator = null, $value = null);
 
 	/**
 	 * Set the search query filter
 	 * @param  string
-	 * @return void
+	 * @return $this
 	 */
 	public function filter($query);
 
@@ -36,7 +43,7 @@ interface StoreInterface
 	 * Set the orderBy column and direction for the query
 	 * @param  string $column
 	 * @param  string $direction
-	 * @return void
+	 * @return $this
 	 */
 	public function orderBy($column, $direction);
 
@@ -44,16 +51,30 @@ interface StoreInterface
 	 * Set the limit and offset for the query
 	 * @param  integer $offset
 	 * @param  integer $limit
-	 * @return void
+	 * @return $this
 	 */
 	public function limit($offset, $limit);
+
+	/**
+	 * Set the with get finalizer override method
+	 * @param  string $properties
+	 * @return $this
+	 */
+	public function with($properties);
+
+	/**
+	 * Check if with has been set
+	 * @param  string  $with
+	 * @return boolean
+	 */
+	public function hasWith($with);
 
 	/**
 	 * Find a record by id or key
 	 * @param  mixed $id
 	 * @return object
 	 */
-	public function find($id = null);
+	public function find($id);
 
 	/**
 	 * Get first single record in query

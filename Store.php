@@ -77,7 +77,7 @@ abstract class Store
 	 * @param  string $one
 	 * @param  string $operator
 	 * @param  string $two
-	 * @return void
+	 * @return $this
 	 */
 	public function join($table, $one, $operator, $two)
 	{
@@ -96,26 +96,31 @@ abstract class Store
 			'operator' => $operator,
 			'two' => $two
 		];
+		return $this;
 	}
 
 	/**
 	 * Set a new select statement
 	 * @param  array
-	 * @return void
+	 * @return $this
 	 */
 	public function select($columns)
 	{
+		$columns = is_array($columns) ? $columns : func_get_args();
 		$this->select = $this->map($columns);
+		return $this;
 	}
 
 	/**
 	 * Add additional select(s) to the query
 	 * @param  array
-	 * @return void
+	 * @return $this
 	 */
 	public function addSelect($columns)
 	{
+		$columns = is_array($columns) ? $columns : func_get_args();
 		$this->select[] = $this->map($columns);
+		return $this;
 	}
 
 	/**
@@ -123,7 +128,7 @@ abstract class Store
 	 * @param  string  $column
 	 * @param  string  $operator
 	 * @param  mixed   $value
-	 * @return void
+	 * @return $this
 	 */
 	public function where($column, $operator = null, $value = null)
 	{
@@ -137,53 +142,32 @@ abstract class Store
 				$operator = "=";
 			}
 
-			/*$table = $this->attributes('table');
-			if (str_contains($column, '.')) list($table, $column) = explode('.', $column);
-
-			$subentity = false;
-			if ($table != $this->attributes('table')) {
-				// This column does not belong to this store...but to a subentity. Use that subentities attributes map
-				$manager = app($this->realNamespace()); //Tricky...for inherited entities like VFI client
-				$map = $manager->$table->store->attributes('map');
-				$table = $manager->$table->store->attributes('table');
-				$subentity = true;
-			} else {
-				// This columns belongs to this store...use this stores map
-				$map = $this->attributes('map');
-			}
-
-			$mappedColumn = $this->map($column, false, $map);
-			if (str_contains($mappedColumn, '.')) {
-				// If mappedColumn has . in it, use that as override table
-				list($table, $mappedColumn) = explode('.', $mappedColumn);
-			}*/
-
 			$mappedColumn = $this->map($column);
 			$this->where[] = [
-				#'table' => $table,
-				#'subentity' => $subentity,
 				'column' => $mappedColumn,
 				'operator' => $operator,
 				'value' => $value,
 			];
 		}
+		return $this;
 	}
 
 	/**
 	 * Set the search query filter
 	 * @param  string
-	 * @return void
+	 * @return $this
 	 */
 	public function filter($query)
 	{
 		$this->filter = $query;
+		return $this;
 	}
 
 	/**
 	 * Set the orderBy column and direction for the query
 	 * @param  string $column
 	 * @param  string $direction
-	 * @return void
+	 * @return $this
 	 */
 	public function orderBy($column, $direction)
 	{
@@ -210,28 +194,31 @@ abstract class Store
 			'column' => "$table.$mappedColumn",
 			'direction' => $direction
 		];
+		return $this;
 	}
 
 	/**
 	 * Set the limit and offset for the query
 	 * @param  integer $offset
 	 * @param  integer $limit
-	 * @return void
+	 * @return $this
 	 */
 	public function limit($offset, $limit)
 	{
 		$this->limit = ['skip' => $offset, 'take' => $limit];
+		return $this;
 	}
 
 	/**
 	 * Set the with get finalizer override method
 	 * @param  string $properties
-	 * @return void
+	 * @return $this
 	 */
 	public function with($properties)
 	{
 		if (!is_array($properties)) $properties = func_get_args();
 		$this->with = $properties;
+		return $this;
 	}
 
 	/**
@@ -242,6 +229,44 @@ abstract class Store
 	public function hasWith($with)
 	{
 		return in_array($with, $this->with);
+	}
+
+	/**
+	 * Find a record by id or key
+	 * @param  mixed $id
+	 * @return object
+	 */
+	public function find($id)
+	{
+		if (isset($id)) {
+			// Determine ID Columns
+			$idColumn = $this->map($this->attributes('primary'), true);
+			if (!is_numeric($id)) $idColumn = 'key'; //fixme
+			return $this->where($idColumn, $id)->first();
+		}
+	}
+
+	/**
+	 * Get first single record in query
+	 * @return object
+	 */
+	public function first()
+	{
+		$results = $this->get();
+		if (isset($results)) {
+			return $results->first();
+		}
+	}
+
+	/**
+	 * Get a key/value list
+	 * @param  string $column
+	 * @param  string $key
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function lists($column, $key)
+	{
+		return $this->select($column, $key)->get()->lists($column, $key);
 	}
 
 	/**
@@ -283,7 +308,6 @@ abstract class Store
 		return $this->save($entity);
 	}
 
-
 	/**
 	 * Translate entity property names to store column names (or visa versa)
 	 * @param  array|string $items
@@ -299,32 +323,38 @@ abstract class Store
 		if (!$isArray) $items = [$items];
 
 		if (!$reverse) {
- 			// Translate entity property to column name
+ 			// Translate entity.property into store table.column (ex: addressID to address_id)
 			foreach ($items as $item) {
+				$thisMap = $map;
 				$table = $this->attributes('table');
-				if (str_contains($item, '.')) list($table, $item) = explode('.', $item);
 
-				if ($table != $this->attributes('table')) {
-					// This column does not belong to this store...but to a subentity. Use that subentities attributes map
+				// Get entity attributes from selection name (id, clients.*...)
+				if (str_contains($item, '.')) {
+					// Map is potentially from another entity
+					list($table, $item) = explode('.', $item);
 
-					if ($table == 'feeds') $table = 'feed'; //fixme
-					if ($table == 'groups') $table = 'group'; //fixme
-
-					$manager = app($this->realNamespace());
-					if (is_null($manager->$table)) $manager = app($this->manager->namespace);
-					$map = $manager->$table->store->attributes('map');
-					$table = $manager->$table->store->attributes('table');
-				} else {
-					// This columns belongs to this store...use this stores map
-					$map = $this->attributes('map');
+					if ($table != $this->attributes('table')) {
+						// Get map and table name form another entity
+						$entity = $table;
+						if (isset($map[$entity])) {
+							$options = $map[$entity];
+							if (isset($options['entity'])) {
+								$table = $options['table'];
+								$entity = $options['entity'];
+							}
+						}
+						$manager = $this->entityManager($entity);
+						$thisMap = $manager->$entity->store->attributes('map');
+						$table = $manager->$entity->store->attributes('table');
+					}
 				}
 
+				// Translate property=>column
 				if ($item == '*') {
 					$translated[] = "$table.$item";
 				} else {
-					foreach ($map as $property => $options) {
+					foreach ($thisMap as $property => $options) {
 						$column = isset($options['column']) ? $options['column'] : null;
-						$filter = isset($options['filter']) ? $options['filter'] : null;
 						if ($item == $property) {
 							if (isset($column)) {
 								if (str_contains($column, '.')) {
@@ -338,43 +368,43 @@ abstract class Store
 						}
 					}
 				}
-
 			}
 
  		} else {
- 			// Translate column name to entity property
+
+			// Translate store table.column into entity.property (ex: address_id into addressID)
  			foreach ($items as $item) {
-
 				$thisMap = $map;
-				if (str_contains($item, '.')) list($table, $item) = explode('.', $item);
-				if (isset($table)) {
-					if ($table != $this->attributes('table')) {
-						// This column does not belong to this store...but to a subentity. Use that subentities attributes map
-						$manager = app($this->realNamespace()); //Tricky...for inherited entities like VFI client
+				$table = null;
+				if (str_contains($item, '.')) {
+					list($table, $item) = explode('.', $item);
 
-						// Translate entity into table name (addresses into address)
+					if ($table != $this->attributes('table')) {
+						// From another entity
+						$entity = $table;
 						foreach ($map as $property => $options) {
 							if (isset($options['table'])) {
 								if ($options['table'] == $table) {
 									$table = $property;
+									$entity = $options['entity'];
 								}
 							}
 						}
-
-						if (is_null($manager->$table)) $manager = app($this->manager->namespace);
-						$table = $manager->$table->store->attributes('entity');
-						$thisMap = $manager->$table->store->attributes('map');
+						$manager = $this->entityManager($entity);
+						$thisMap = $manager->$entity->store->attributes('map');
 					} else {
-						$table = $this->attributes('entity');
+						// From same entity, reset table
+						$table = null;
 					}
 				}
 
+				// Translate table.column=>entity.property
 				if ($item == '*') {
 					$translated[] = "$table.$item";
 				} else {
 	 				foreach ($thisMap as $property => $options) {
 		 				if (isset($options['column']) && $options['column'] == $item) {
-		 					if ((isset($table)) && $table == $this->attributes('entity') || !isset($table)) {
+		 					if (!isset($table)) {
 		 						$translated[] = $property;
 		 					} else {
 		 						$translated[] = "$table.$property";
@@ -459,6 +489,8 @@ abstract class Store
 			}
 
 			$map = $this->attributes('map');
+
+			$unmappedKeys = get_object_vars($store);
 			foreach ($map as $property => $options) {
 				$value = null;
 				$column = isset($options['column']) ? $options['column'] : null;
@@ -473,17 +505,22 @@ abstract class Store
 						$value = $store->$column;
 					}
 				} elseif (!isset($column) && isset($filter)) {
-
 					// This is a virtual column which has been selected
 					// Its only value is from a filter
 					$value = call_user_func($filter, $store);
-
 				}
 
 				if (property_exists($entity, $property)) {
+					unset($unmappedKeys[$column]);
 					$entity->$property = $value;
 				}
 			}
+
+			// If using custom select or join there will be other unmapped keys
+			foreach ($unmappedKeys as $key => $value) {
+				$entity->$key = $value;
+			}
+
 			// Call a postTransformStore method if exists
 			if (method_exists($this, 'postTransformStore')) {
 				$this->postTransformStore($entity);
@@ -517,62 +554,6 @@ abstract class Store
 	}
 
 	/**
-	 * Handle all bulk with merges
-	 * @return \Illuminate\Support\Collection
-	 */
-	protected function mergeWiths()
-	{
-		// Save off and reset select before newQuery()
-		$select = $this->select; $this->select = null;
-
-		// Run query with joins and wheres to get final initial base result
-		$entities = $this->transaction(function() {
-
-			// Include each subentity join method
-			foreach ($this->with as $with) {
-				$method = 'join'.studly_case($with);
-				if (method_exists($this, $method)) {
-					$this->$method();
-				}
-			}
-
-			// Run query with any new joins
-			$query = $this->newQuery();
-
-			// Select only main table or ids and duplicated columns between joins will collide
-			return $query->select($this->attributes('table').'.*')->get();
-		});
-
-		$results = null;
-		if (isset($entities)) {
-			// Run new subentity query and merge with main query
-			foreach ($this->with as $with) {
-				$method = 'merge'.studly_case($with);
-				if (method_exists($this, $method)) {
-					$this->$method($entities);
-				}
-			}
-
-			// Select columns from collection (post query)
-			$results = $this->selectCollection($entities, $this->map($select, true));
-
-			// I could actually fill legacy properties with new ->host->* columns if needed!
-			// But they are still accesslbie via lazy legacy if needed
-			#$results->map(function($result) {
-				#$result->hostname = $result->hostKey;
-				#$result->company = $result->host->name;
-				#$result->companyGuid = $result->host->guid;
-				#$result->server = $result->host->server;
-				#$result->serverNum = $result->host->serverNum;
-				#unset($result->host);
-			#});
-
-		}
-		$this->with = null;
-		return $results;
-	}
-
-	/**
 	 * Select columns from a collection (post query)
 	 * @param  \Illuminate\Support\Collection $items
 	 * @param  array $select must be entity columns, not store columns so reverse map
@@ -585,9 +566,6 @@ abstract class Store
 			$items = $items->map(function($item) use($select) {
 				$newItem = new stdClass();
 				foreach ($select as $column) {
-
-					if ($column == 'feed.*') $column = 'feeds.*'; //fixme
-					if ($column == 'group.*') $column = 'groups.*'; //fixme
 
 					if (str_contains($column, '.*')) {
 						// Just remove .* and pickup entire subentity
@@ -710,6 +688,25 @@ abstract class Store
 	{
 		$entity = $this->attributes('entity');
 		return $this->manager->store($this->storeKey)->$entity->newInstance();
+	}
+
+	/**
+	 * Get manager for entity
+	 * @param  string $entity
+	 * @return object
+	 */
+	protected function entityManager($entity)
+	{
+		$manager = app($this->realNamespace());
+		if (is_null($manager->$entity)) {
+			// Entity not found in realNamespace, try inherited namespace
+			$manager = app($this->manager->namespace);
+			if (is_null($manager->$entity)) {
+				// Entity not found
+				return null;
+			}
+		}
+		return $manager;
 	}
 
 	/**

@@ -35,68 +35,17 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
-	 * Find a record by id or key
-	 * @param  mixed $id
-	 * @return object
-	 */
-	public function find($id = null)
-	{
-		if (isset($id) && is_null($this->where)) {
-			// Determine ID Columns
-			$idColumn = $this->attributes('primary');
-			if (!is_numeric($id)) $idColumn = 'key';
-
-			// Get result using ID column
-			$results = $this->transaction(function() use($idColumn, $id) {
-				return $this->newQuery()->where($idColumn, $id)->first();
-			});
-		} else {
-			// Get result using $this->where column
-			$results = $this->transaction(function() {
-				return $this->newQuery()->first();
-			});
-		}
-
-		// Add in custom store based ->with() and return
-		return $results->with($this->with);
-	}
-
-	/**
-	 * Get first single record in query
-	 * @return object
-	 */
-	public function first()
-	{
-		$results = $this->transaction(function() {
-			return $this->newQuery()->first();
-		});
-		return $results->with($this->with);
-	}
-
-	/**
 	 * Get all records for an entity
 	 * @return \Illuminate\Support\Collection
 	 */
 	public function get()
 	{
-		/*if (isset($this->query)) {
-			// Query override set, use that
-			$results = $this->query->get();
-			#dd($this->query->toSql());
-			$this->resetQuery();
-			return $results;
-		}
-		return $this->transaction(function() {
-			return $this->newQuery()->get();
-		});
-		*/
-
 		if (isset($this->join)) {
 			// Custom joins MUST also have custom custom columns or join collisions may occure
 			if (isset($this->select)) {
 				$results = $this->transaction(function() {
 					return $this->newQuery()->get();
-				}, false);
+				});
 
 				// Unflatten collection (from address.city into address->city)
 				$results = $this->expandCollection(collect($results));
@@ -116,30 +65,6 @@ abstract class DbStore extends Store implements StoreInterface
 			#dump($this->newQuery()->toSQL());
 			return $this->newQuery()->get();
 		});
-
-
-
-
-		/*if (isset($this->with)) {
-			// Custom ->get function
-			return $this->mergeWiths();
-		}
-		return $this->transaction(function() {
-			return $this->newQuery()->get();
-		});*/
-	}
-
-	/**
-	 * Get a key/value list
-	 * @param  string $column
-	 * @param  string $key
-	 * @return \Illuminate\Support\Collection
-	 */
-	public function lists($column, $key)
-	{
-		return $this->transaction(function() use($column, $key) {
-			return collect($this->newQuery()->lists($this->map($column), $this->map($key)))->sort();
-		}, false);
 	}
 
 	/**
@@ -150,13 +75,6 @@ abstract class DbStore extends Store implements StoreInterface
 	{
 		// Remember this does call ->get() so this count is DB level with filters included
 		return $this->newQuery()->count();
-
-
-
-		/*if (isset($this->query)) {
-			return $this->query->count();
-		}
-		return $this->newQuery()->count();*/
 	}
 
 	/**
@@ -166,24 +84,21 @@ abstract class DbStore extends Store implements StoreInterface
 	protected function newQuery()
 	{
 		// Build new query
-
-		/*$this->query = $this->table()->select($this->select ?: ['*']);
-		$this->addFilterQuery($this->query);
-		$this->addWhereQuery($this->query);
-		$this->addOrderByQuery($this->query);
-		$this->addLimitQuery($this->query);
-		return $this->query;*/
-
-		#dd($this->select);
-
 		$selects = [];
 		if (isset($this->select)) {
 			foreach ($this->select as $select) {
-				$selects[] = "$select as ".$this->map($select, true);
+				$mappedSelect = $this->map($select, true); // host.serverNum
+				list($table, $item) = explode('.', $select);
+
+				if (str_contains($mappedSelect, '.')) {
+					list($table, $item) = explode('.', $mappedSelect);
+					$selects[] = "$select as $table.$item";
+				} else {
+					$selects[] = "$select as $item";
+				}
+				#$selects[] = "$select as ".$this->map($select, false);
 			}
 		}
-		#dd($selects);
-
 
 		$query = $this->table()->select($selects ?: ['*']);
 		$this->addJoinQuery($query);
@@ -289,6 +204,50 @@ abstract class DbStore extends Store implements StoreInterface
 		if (isset($this->limit)) {
 			$query->skip($this->limit['skip'])->take($this->limit['take']);
 		}
+	}
+
+	/**
+	 * Handle all bulk with merges
+	 * @return \Illuminate\Support\Collection
+	 */
+	protected function mergeWiths()
+	{
+		// Save off and reset select before newQuery()
+		$select = $this->select; $this->select = null;
+
+		// Run query with joins and wheres to get final initial base result
+		$entities = $this->transaction(function() {
+
+			// Include each subentity join method
+			foreach ($this->with as $with) {
+				$method = 'join'.studly_case($with);
+				if (method_exists($this, $method)) {
+					$this->$method();
+				}
+			}
+
+			// Run query with any new joins
+			$query = $this->newQuery();
+
+			// Select only main table or ids and duplicated columns between joins will collide
+			return $query->select($this->attributes('table').'.*')->get();
+		});
+
+		$results = null;
+		if (isset($entities)) {
+			// Run new subentity query and merge with main query
+			foreach ($this->with as $with) {
+				$method = 'merge'.studly_case($with);
+				if (method_exists($this, $method)) {
+					$this->$method($entities);
+				}
+			}
+
+			// Select columns from collection (post query)
+			$results = $this->selectCollection($entities, $this->map($select, true));
+		}
+		$this->with = null;
+		return $results;
 	}
 
 	/**
