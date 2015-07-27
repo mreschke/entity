@@ -69,12 +69,19 @@ abstract class DbStore extends Store implements StoreInterface
 
 	/**
 	 * Get a count of query records
-	 * @return integer
+	 * @return integer|null
 	 */
 	public function count()
 	{
-		// Remember this does call ->get() so this count is DB level with filters included
-		return $this->newQuery()->count();
+		try {
+			$filteredRecords = $this->newQuery()->count();
+		} catch (\Exception $e) {
+			// If error, means we are filtering on a subentity column...which will break counts and is not supported
+			// This means you cannot have any pager counts if filtering on subentity.  Either don't allow, or revert to primitive pager
+			// or don't use server side paging (don't use buildDB, build from full collection instead)
+			$filteredRecords = null;
+		}
+		return $filteredRecords;
 	}
 
 	/**
