@@ -1,0 +1,26 @@
+{
+	"name": "mreschke/repository",
+	"type": "library",
+	"description": "Mreschke Repository and Entity Manager",
+	"keywords": ["mreschke", "repository", "entity", "mapper", "manager"],
+	"homepage": "http://github.com/mreschke/repository",
+	"license": "MIT",
+	"support": {
+		"issues": "https://github.com/mreschke/repository/issues"
+	},
+	"authors": [
+		{
+			"name": "Matthew Reschke",
+			"email": "mail@mreschke.com"
+		},
+		{
+			"name": "John Plata",
+			"email": "jplata@dynatronsoftware.com"
+		}		
+	],
+	"autoload": {
+		"psr-4": {
+			"Mreschke\\Repository\\": ""
+		}
+	}
+}

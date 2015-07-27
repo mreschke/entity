@@ -1,0 +1,390 @@
+<?php namespace Mreschke\Repository;
+
+use stdClass;
+use Illuminate\Database\ConnectionInterface;
+
+/**
+ * Laravel DB Query Builder Store
+ * @copyright 2015 Matthew Reschke
+ * @license http://mreschke.com/license/mit
+ * @author Matthew Reschke <mail@mreschke.com>
+ */
+abstract class DbStore extends Store implements StoreInterface
+{
+
+	/**
+	 * The database connection instance
+	 * @var \Illuminate\Database\ConnectionInterface
+	 */
+	protected $connection;
+
+	protected $with;
+
+	/**
+	 * Create a new instance of this store
+	 * @param ConnectionInterface $connection
+	 */
+	public function __construct($manager, $storeKey, ConnectionInterface $connection)
+	{
+		$this->manager = $manager;
+		$this->storeKey = $storeKey;
+		$this->connection = $connection;
+
+		// Initialize store
+		$this->init();
+	}
+
+	/**
+	 * Find a record by id or key
+	 * @param  mixed $id
+	 * @return object
+	 */
+	public function find($id = null)
+	{
+		if (isset($id) && is_null($this->where)) {
+			// Determine ID Columns
+			$idColumn = $this->attributes('primary');
+			if (!is_numeric($id)) $idColumn = 'key';
+
+			// Get result using ID column
+			$results = $this->transaction(function() use($idColumn, $id) {
+				return $this->newQuery()->where($idColumn, $id)->first();
+			});
+		} else {
+			// Get result using $this->where column
+			$results = $this->transaction(function() {
+				return $this->newQuery()->first();
+			});
+		}
+
+		// Add in custom store based ->with() and return
+		return $results->with($this->with);
+	}
+
+	/**
+	 * Get first single record in query
+	 * @return object
+	 */
+	public function first()
+	{
+		$results = $this->transaction(function() {
+			return $this->newQuery()->first();
+		});
+		return $results->with($this->with);
+	}
+
+	/**
+	 * Get all records for an entity
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function get()
+	{
+		/*if (isset($this->query)) {
+			// Query override set, use that
+			$results = $this->query->get();
+			#dd($this->query->toSql());
+			$this->resetQuery();
+			return $results;
+		}
+		return $this->transaction(function() {
+			return $this->newQuery()->get();
+		});
+		*/
+
+		if (isset($this->join)) {
+			// Custom joins MUST also have custom custom columns or join collisions may occure
+			if (isset($this->select)) {
+				$results = $this->transaction(function() {
+					return $this->newQuery()->get();
+				}, false);
+
+				// Unflatten collection (from address.city into address->city)
+				$results = $this->expandCollection(collect($results));
+
+				// Key by primary
+				return $this->keyByPrimary($results);
+			}
+			return null;
+		}
+
+		if (isset($this->with)) {
+			// Custom ->get function
+			return $this->mergeWiths();
+		}
+
+		return $this->transaction(function() {
+			#dump($this->newQuery()->toSQL());
+			return $this->newQuery()->get();
+		});
+
+
+
+
+		/*if (isset($this->with)) {
+			// Custom ->get function
+			return $this->mergeWiths();
+		}
+		return $this->transaction(function() {
+			return $this->newQuery()->get();
+		});*/
+	}
+
+	/**
+	 * Get a key/value list
+	 * @param  string $column
+	 * @param  string $key
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function lists($column, $key)
+	{
+		return $this->transaction(function() use($column, $key) {
+			return collect($this->newQuery()->lists($this->map($column), $this->map($key)))->sort();
+		}, false);
+	}
+
+	/**
+	 * Get a count of query records
+	 * @return integer
+	 */
+	public function count()
+	{
+		// Remember this does call ->get() so this count is DB level with filters included
+		return $this->newQuery()->count();
+
+
+
+		/*if (isset($this->query)) {
+			return $this->query->count();
+		}
+		return $this->newQuery()->count();*/
+	}
+
+	/**
+	 * Start a new query builder
+	 * @return \Illuminate\Database\Query\Builder
+	 */
+	protected function newQuery()
+	{
+		// Build new query
+
+		/*$this->query = $this->table()->select($this->select ?: ['*']);
+		$this->addFilterQuery($this->query);
+		$this->addWhereQuery($this->query);
+		$this->addOrderByQuery($this->query);
+		$this->addLimitQuery($this->query);
+		return $this->query;*/
+
+		#dd($this->select);
+
+		$selects = [];
+		if (isset($this->select)) {
+			foreach ($this->select as $select) {
+				$selects[] = "$select as ".$this->map($select, true);
+			}
+		}
+		#dd($selects);
+
+
+		$query = $this->table()->select($selects ?: ['*']);
+		$this->addJoinQuery($query);
+		$this->addFilterQuery($query);
+		$this->addWhereQuery($query);
+		$this->addOrderByQuery($query);
+		$this->addLimitQuery($query);
+		return $query;
+	}
+
+	/**
+	 * Add joins to query builder
+	 * @param \Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addJoinQuery($query)
+	{
+		if (isset($this->join)) {
+			foreach ($this->join as $join) {
+				$query->join($join['table'], $join['one'], $join['operator'], $join['two']);
+			}
+		}
+	}
+
+	/**
+	 * Add global filter to query builder
+	 * @param \Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addFilterQuery($query)
+	{
+		if (isset($this->filter)) {
+			$likable = null;
+			$map = $this->attributes('map');
+			foreach ($map as $property => $options) {
+				if (isset($options['column']) && isset($options['likable']) && $options['likable'] == true) {
+					$likable[] = $options['column'];
+				}
+			}
+			if (isset($likable)) {
+				$query->where(function($query) use($likable) {
+					foreach ($likable as $like) {
+						$query->orWhere($like, 'like', "%$this->filter%");
+					}
+				});
+			} else {
+				// No columns are likable, just use primary with = (not like)
+				$primary = $this->attributes('primary');
+				if (isset($primary)) {
+					$query->where($primary, $this->filter);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add where to query builder
+	 * @param \Illuminate\Database\Query\Builder $query
+	 * @param array $subentity = null only add wheres with this subeneity
+	 */
+	protected function addWhereQuery($query, $subentity = null)
+	{
+		// Ex with both filter and where: select * from `dms` where (`key` like ? or `name` like ?) and `disabled` = ?
+		if (isset($this->where)) {
+			foreach ($this->where as $where) {
+				#$table = $where['table'];
+				$column = $where['column'];
+				$operator = $where['operator'];
+				$value = $where['value'];
+
+				if ($operator == 'in') {
+					#$query->whereIn("$table.$column", $value);
+					$query->whereIn($column, $value);
+				} else {
+					#$query->where("$table.$column", $operator, $value);
+					$query->where($column, $operator, $value);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add order by to query builder
+	 * @param \Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addOrderByQuery($query)
+	{
+		if (isset($this->orderBy)) {
+			$query->orderBy($this->orderBy['column'], $this->orderBy['direction']);
+		} else {
+			// Default order by
+			if (isset($this->attributes['order_by'])) {
+				$query->orderBy($this->attributes('order_by'), $this->attributes('order_by_dir'));
+			}
+			// Else omit the order by statement completely which will use tables clustered index as order
+		}
+	}
+
+	/**
+	 * Add limit to query builder
+	 * @param \Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addLimitQuery($query)
+	{
+		if (isset($this->limit)) {
+			$query->skip($this->limit['skip'])->take($this->limit['take']);
+		}
+	}
+
+	/**
+	 * Save one or multiple entity objects
+	 * @param  array|object $entities
+	 * @return array|object|boolean
+	 */
+	public function save($entities)
+	{
+		if ($this->fireEvent('saving', $entities) === false) return false;
+
+		if (is_array($entities)) {
+
+			// Save bulk records
+			$records = [];
+			foreach ($entities as $entity) {
+				$records[] = $this->transformEntity($entity);
+			}
+			if ($this->fireEvent('creating', $entities) === false) return false;
+
+			$this->table()->insert($records);
+
+			$this->fireEvent('created', $entities);
+
+		} else {
+
+			// Save a single record
+			$record = $this->transformEntity($entities);
+
+			// Get Store attributes
+			$primary = $this->attributes('primary');
+			$increments = $this->attributes('increments');
+
+			if (isset($primary)) {
+				// Smart insert or update based on primary key selection
+				$handle = $this->table()->where($primary, $entities->$primary);
+				if (is_null($handle->first())) {
+					// Insert a new record
+					if ($increments) {
+						$entities->$primary = $this->table()->insertGetId($record);
+					} else {
+						if ($this->fireEvent('creating', $entities) === false) return false;
+
+						$this->table()->insert($record);
+
+						$this->fireEvent('created', $entities);
+					}
+				} else {
+					// Updating an existing record
+					if ($this->fireEvent('updating', $entities) === false) return false;
+
+					$handle->update($record);
+
+					$this->fireEvent('updated', $entities);
+				}
+			} else {
+				// Table has no primary (probably a linkage table)
+				$this->table()->insert($record);
+			}
+
+		}
+		$this->fireEvent('saved', $entities);
+		return $entities;
+	}
+
+	/**
+	 * Delete this object from the store
+	 * @param  object $entity
+	 */
+	public function delete($entity)
+	{
+		if ($this->fireEvent('deleting', $entity) === false) return false;
+
+		$primary = $this->attributes('primary');
+		if (isset($primary)) {
+			$entityPrimary = $this->map($primary, true);
+			$id = $entity->$entityPrimary;
+
+			// This will throw exception on errors like integrity constraint...good
+			$this->table()->where($primary, $id)->delete();
+
+			$this->fireEvent('deleted', $entity);
+		}
+	}
+
+	/**
+	 * Truncate all records
+	 * @return void
+	 */
+	public function truncate()
+	{
+		if ($this->fireEvent('truncating') === false) return false;
+		$this->connection->statement("SET foreign_key_checks=0");
+		$this->table()->truncate();
+		$this->connection->statement("SET foreign_key_checks=1");
+		$this->fireEvent('truncated');
+	}
+
+}

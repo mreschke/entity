@@ -1,2 +1,3 @@
-# entity
-Entity Repository Mapper
+# mreschke/repository
+
+Repository and Entity Manager

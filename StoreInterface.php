@@ -1,0 +1,134 @@
+<?php namespace Mreschke\Repository;
+
+/**
+ * Provides a contractual interface for Mreschke\Repository\Store
+ * @copyright 2015 Matthew Reschke
+ * @license http://mreschke.com/license/mit
+ * @author Matthew Reschke <mail@mreschke.com>
+ */
+interface StoreInterface
+{
+
+	/**
+	 * Set a new select statement
+	 * @param  array|func_get_args $columns
+	 * @return void
+	 */
+	public function select($columns);
+
+	/**
+	 * Add a where clause to the query
+	 * @param  string  $column
+	 * @param  string  $operator
+	 * @param  mixed   $value
+	 * @return void
+	 */
+	public function where($column, $operator = null, $value = null);
+
+	/**
+	 * Set the search query filter
+	 * @param  string
+	 * @return void
+	 */
+	public function filter($query);
+
+	/*
+	 * Set the orderBy column and direction for the query
+	 * @param  string $column
+	 * @param  string $direction
+	 * @return void
+	 */
+	public function orderBy($column, $direction);
+
+	/**
+	 * Set the limit and offset for the query
+	 * @param  integer $offset
+	 * @param  integer $limit
+	 * @return void
+	 */
+	public function limit($offset, $limit);
+
+	/**
+	 * Find a record by id or key
+	 * @param  mixed $id
+	 * @return object
+	 */
+	public function find($id = null);
+
+	/**
+	 * Get first single record in query
+	 * @return object
+	 */
+	public function first();
+
+	/**
+	 * Get all records for an entity
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function get();
+
+	/**
+	 * Get a key/value list
+	 * @param  string $column
+	 * @param  string $key
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function lists($column, $key);
+
+	/**
+	 * Get a count of query records
+	 * @return integer
+	 */
+	public function count();
+
+	/**
+	 * Save one or multiple entity objects
+	 * @param  array|object $entities
+	 * @return array|object
+	 */
+	public function save($entities);
+
+	/**
+	 * Insert one or multiple records by array
+	 * @param  object $entity
+	 * @param  array $data
+	 * @return object
+	 */
+	public function insert($entity, $data);
+
+	/**
+	 * Update a record by array
+	 * @param  object $entity
+	 * @param  array $data
+	 * @return object
+	 */
+	public function update($entity, $data);
+
+	/**
+	 * Delete this object from the store
+	 * @param  object $entity
+	 */
+	public function delete($entity);
+
+	/**
+	 * Truncate all records
+	 * @return void
+	 */
+	public function truncate();
+
+	/**
+	 * Translate entity property names to store column names (or visa versa)
+	 * @param  array|string $items
+	 * @param  boolean $reverse = false reverse the translation
+	 * @return array
+	 */
+	public function map($items, $reverse = false);
+
+	/**
+	 * Get one or all store attributes
+	 * @param  string $key
+	 * @return mixed
+	 */
+	public function attributes($key = null);
+
+}
