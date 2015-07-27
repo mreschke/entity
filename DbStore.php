@@ -1,6 +1,7 @@
 <?php namespace Mreschke\Repository;
 
 use stdClass;
+use Exception;
 use Illuminate\Database\ConnectionInterface;
 
 /**
@@ -52,6 +53,8 @@ abstract class DbStore extends Store implements StoreInterface
 
 				// Key by primary
 				return $this->keyByPrimary($results);
+			} else {
+				throw new Exception("Must specify a custom select when using joins");
 			}
 			return null;
 		}
@@ -68,17 +71,18 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
-	 * Get a count of query records
+	 * Get a count of query records (null if error counting)
 	 * @return integer|null
 	 */
 	public function count()
 	{
 		try {
 			$filteredRecords = $this->newQuery()->count();
-		} catch (\Exception $e) {
-			// If error, means we are filtering on a subentity column...which will break counts and is not supported
-			// This means you cannot have any pager counts if filtering on subentity.  Either don't allow, or revert to primitive pager
-			// or don't use server side paging (don't use buildDB, build from full collection instead)
+		} catch (Exception $e) {
+			// If error, means we are filtering on a subentity column of a ->with()...which will break counts and is not supported
+			// This means you cannot have any pager counts if filtering on subentity using ->with().  Either don't allow, or revert to primitive pager
+			// or don't use server side paging (don't use buildDB, build from full collection instead).
+			// Or if in same entity, use custom ->join() instead of ->with()
 			$filteredRecords = null;
 		}
 		return $filteredRecords;

@@ -171,27 +171,8 @@ abstract class Store
 	 */
 	public function orderBy($column, $direction)
 	{
-		$table = $this->attributes('table');
-		if (str_contains($column, '.')) list($table, $column) = explode('.', $column);
-
-		if ($table != $this->attributes('table')) {
-			// This column does not belong to this store...but to a subentity. Use that subentities attributes map
-			$manager = app($this->realNamespace()); //Tricky...for inherited entities like VFI client
-			$map = $manager->$table->store->attributes('map');
-			$table = $manager->$table->store->attributes('table');
-		} else {
-			// This columns belongs to this store...use this stores map
-			$map = $this->attributes('map');
-		}
-
-		$mappedColumn = $this->map($column, false, $map);
-		if (str_contains($mappedColumn, '.')) {
-			// If mappedColumn has . in it, use that as override table
-			list($table, $mappedColumn) = explode('.', $mappedColumn);
-		}
-
 		$this->orderBy = [
-			'column' => "$table.$mappedColumn",
+			'column' => $this->map($column),
 			'direction' => $direction
 		];
 		return $this;

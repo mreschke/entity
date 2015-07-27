@@ -182,8 +182,8 @@ abstract class Entity
 	}
 
 	/**
-	 * Get a count of query records
-	 * @return integer
+	 * Get a count of query records (null if error counting)
+	 * @return integer|null
 	 */
 	public function count()
 	{
