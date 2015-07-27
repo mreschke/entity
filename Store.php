@@ -210,14 +210,18 @@ abstract class Store
 	}
 
 	/**
-	 * Set the with get finalizer override method
+	 * Add a with relationship for the query
 	 * @param  string $properties
 	 * @return $this
 	 */
 	public function with($properties)
 	{
 		if (!is_array($properties)) $properties = func_get_args();
-		$this->with = $properties;
+		foreach ($properties as $property) {
+			if (is_null($this->with) || !in_array($property, $this->with)) {
+				$this->with[] = $property;
+			}
+		}
 		return $this;
 	}
 
