@@ -1,0 +1,3 @@
+system="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../../../../../../System && pwd )"
+
+$system/artisan migrate --database test-repository-db --path ../Apps/Mreschke/Repository/Tests/Fake/Database/Migrations/

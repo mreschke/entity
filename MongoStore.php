@@ -72,11 +72,25 @@ abstract class MongoStore extends Store implements StoreInterface
 	 * Get all records for an entity
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function all()
+	public function get()
 	{
 		// Get results
 		return $this->transaction(function() {
-			return $this->table()->find($this->buildWhereAnd(), $this->select ?: []);
+			dd('x');
+			$results = $this->table()->find($this->buildWhereAnd(), $this->select ?: []);
+			#$results = $this->table()->find();
+			#dd(array('name' => array('$in' => array('Joe', 'Wendy'))));
+			#dd(array( '$and' => array(array(' class' =>12), array('marks'=>70))));
+			dd($this->buildWhereAnd());
+			#$results = $this->table()->find([], $this->select ?: []);
+			$x = null;
+			foreach ($results as $r) {
+				$x[] = $r;
+			}
+			dd($x);
+			#$results = $this->table()->find([], $this->select ?: []);
+			#dd($results);
+			return $results;
 		});
 	}
 
@@ -119,15 +133,23 @@ abstract class MongoStore extends Store implements StoreInterface
 	{
 		// FIXME, does not work for > < >= <= ... and more
 		$where = [];
+		$andWhere = null;
+		$inWhere = null;
 		if (isset($this->where)) {
 			foreach ($this->where as $w) {
-				$addWhere[] = [$w['column'] => $w['value']];
+				extract($w);
+				if ($operator == 'in') {
+					#$inWhere[$column]['$in'][] = $value;
+					if (!is_array($value)) $value = [$value];
+					$andWhere[] = [$column => ['$in' => $value]];
+				} else {
+					$andWhere[] = [$column => $value];
+				}
 			}
-			$where = array('$and' => $addWhere);
+			if (isset($andWhere)) $where['$and'] = $andWhere;
+			#if (isset($inWhere)) $where['$in'] = $inWhere;
 
 		}
-
-		dd($where);
 		return $where;
 	}
 
@@ -210,7 +232,11 @@ abstract class MongoStore extends Store implements StoreInterface
 		return $entities;
 	}
 
-	public function delete()
+	/**
+	 * Delete this object from the store
+	 * @param  object $entity
+	 */
+	public function delete($entity)
 	{
 		// ????????????????? don't forget deleting and deleted events
 	}

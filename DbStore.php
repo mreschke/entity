@@ -95,6 +95,55 @@ abstract class DbStore extends Store implements StoreInterface
 	protected function newQuery()
 	{
 		// Build new query
+		$query = $this->table();
+		$this->addSelectQuery($query);
+		$this->addJoinQuery($query);
+		$this->addFilterQuery($query);
+		$this->addWhereQuery($query);
+		$this->addOrderByQuery($query);
+		$this->addLimitQuery($query);
+		return $query;
+	}
+
+	/**
+	 * Add selects to query builder
+	 * @param \Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addSelectQuery($query)
+	{
+		// Convert id into clients.id as id
+		// Convert host.serverNum into hosts.server_num as host.serverNum ...
+
+		// This one is odd becuase if column is in this entity, use COLUMN names
+		// not property names because we have to transformStore next which requires column style.
+		// BUT if column is subentity, then use entity names not colum names because we have already transformed the subentity
+		// ex:
+		/*array:9 [▼
+		  0 => "id"
+		  1 => "name"
+		  2 => "addressID"
+		  3 => "host.key"
+		  4 => "host.serverNum"
+		  5 => "address.address"
+		  6 => "address.city"
+		  7 => "address.stateKey"
+		  8 => "disabled"
+		]*/
+		// Translates to
+		/*
+		array:9 [▼
+		  0 => "clients.id as id"
+		  1 => "clients.name as name"
+		  2 => "clients.address_id as address_id"
+		  3 => "hosts.key as host.key"
+		  4 => "hosts.server_num as host.serverNum"
+		  5 => "addresses.address as address.address"
+		  6 => "addresses.city as address.city"
+		  7 => "addresses.state as address.stateKey"
+		  8 => "clients.disabled as disabled"
+		]
+		 */
+
 		$selects = [];
 		if (isset($this->select)) {
 			foreach ($this->select as $select) {
@@ -107,17 +156,9 @@ abstract class DbStore extends Store implements StoreInterface
 				} else {
 					$selects[] = "$select as $item";
 				}
-				#$selects[] = "$select as ".$this->map($select, false);
 			}
 		}
-
-		$query = $this->table()->select($selects ?: ['*']);
-		$this->addJoinQuery($query);
-		$this->addFilterQuery($query);
-		$this->addWhereQuery($query);
-		$this->addOrderByQuery($query);
-		$this->addLimitQuery($query);
-		return $query;
+		$query->select($selects ?: ['*']);
 	}
 
 	/**
@@ -181,6 +222,13 @@ abstract class DbStore extends Store implements StoreInterface
 				if ($operator == 'in') {
 					#$query->whereIn("$table.$column", $value);
 					$query->whereIn($column, $value);
+				} elseif ($operator == 'null') {
+					if ($value) {
+						$query->whereNull($column);
+					} else {
+						$query->whereNotNull($column);
+					}
+
 				} else {
 					#$query->where("$table.$column", $operator, $value);
 					$query->where($column, $operator, $value);

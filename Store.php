@@ -133,18 +133,15 @@ abstract class Store
 	public function where($column, $operator = null, $value = null)
 	{
 		// Only allow operators that ALL stores can utilize (no like, between...)
-		$operators = ['=', '>', '<', '!=', '>=', '<=', 'like', 'in'];
+		$operators = ['=', '>', '<', '!=', '>=', '<=', 'like', 'in', 'null'];
 		if (func_num_args() >= 2) {
 			if (func_num_args() == 2) {
 				list($value, $operator) = array($operator, '=');
 			}
-			if (!in_array(strtolower($operator), $operators)) {
-				$operator = "=";
-			}
+			if (!in_array(strtolower($operator), $operators)) $operator = "=";
 
-			$mappedColumn = $this->map($column);
 			$this->where[] = [
-				'column' => $mappedColumn,
+				'column' => $this->map($column),
 				'operator' => $operator,
 				'value' => $value,
 			];

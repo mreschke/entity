@@ -16,11 +16,12 @@
 		{
 			"name": "John Plata",
 			"email": "jplata@dynatronsoftware.com"
-		}		
+		}
 	],
 	"autoload": {
 		"psr-4": {
-			"Mreschke\\Repository\\": ""
+			"Mreschke\\Repository\\": "",
+			"Mreschke\\Repository\\Fake\\": "Tests\\Fake"
 		}
 	}
 }
