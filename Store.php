@@ -679,6 +679,7 @@ abstract class Store
 	 */
 	protected function entityManager($entity)
 	{
+		// fixme, shoudl try $this->manager first, then app make if needed
 		$manager = app($this->realNamespace());
 		if (is_null($manager->$entity)) {
 			// Entity not found in realNamespace, try inherited namespace

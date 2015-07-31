@@ -27,5 +27,4 @@ class Client extends FakeEntity
 	public $updated;          // Actual db column
 	public $disabled = false; // Actual db column
 
-
 }

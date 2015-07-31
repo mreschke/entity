@@ -399,9 +399,21 @@ abstract class DbStore extends Store implements StoreInterface
 	public function truncate()
 	{
 		if ($this->fireEvent('truncating') === false) return false;
-		$this->connection->statement("SET foreign_key_checks=0");
+		// This SET statement fails with sqlite
+		try {
+			$this->connection->statement("SET foreign_key_checks=0");
+		} catch (\Exception $e) {
+			// do nothing
+		}
+
 		$this->table()->truncate();
-		$this->connection->statement("SET foreign_key_checks=1");
+
+		try {
+			$this->connection->statement("SET foreign_key_checks=1");
+		} catch (\Exception $e) {
+			// do nothing
+		}
+
 		$this->fireEvent('truncated');
 	}
 

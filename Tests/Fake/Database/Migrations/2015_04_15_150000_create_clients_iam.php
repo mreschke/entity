@@ -14,13 +14,11 @@ class CreateClientsFake extends Migration {
 	{
 		Schema::create('clients', function(Blueprint $table) {
 			#$table->engine = 'InnoDB';
-			$table->increments('id');
+			$table->primary('id');
 			$table->string('guid', 36)->unique();
 			$table->integer('extract')->unique();
 			$table->string('name', 100)->index();
 			$table->string('host', 50)->index();
-			#$table->string('server', 50)->index();
-			#$table->smallInteger('server_num')->index();
 			$table->integer('address_id')->nullable()->unsigned();
 			$table->boolean('disabled')->default(false)->index();
 			$table->timestamps();
