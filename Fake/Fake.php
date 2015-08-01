@@ -27,6 +27,7 @@ class Fake extends Manager
 	 * @var array
 	 */
 	protected $resolvable = [
+		'address',
 		'client',
 	];
 

@@ -3,14 +3,21 @@
 return [
 
 	// Default Store
-	'default' => 'test-database',
+	'default' => 'database',
 
 	// Repository Stores
 	'stores' => [
 
-		'test-database' => [
+		'database' => [
 			'driver' => 'db',
-			'connection' => 'test-repository-db',
+			'connection' => 'fake-repository',
+		],
+
+		'mongo' => [
+			'driver' => 'mongo',
+			'host' => 'localhost',
+			'port' => 27017,
+			'database' => 'fake-repository'
 		],
 
 	],

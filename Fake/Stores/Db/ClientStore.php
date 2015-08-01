@@ -4,7 +4,7 @@ use Mreschke\Repository\DbStore;
 use Mreschke\Repository\Fake\Stores\ClientStoreInterface;
 
 /**
- * Iam Client Store
+ * Fake Client Store
  * @copyright Dynatron Software, Inc.
  * @author Matthew Reschke <mreschke@dynatronsoftware.com>
  */
@@ -23,40 +23,26 @@ class ClientStore extends DbStore implements ClientStoreInterface
 	protected function init() {
 		$this->attributes = [
 			'entity' => 'client',
-			'table' => 'clients',
-			'primary' => 'id',
+			'table' => 'ClientTable',
+			'primary' => 'ID',
 			'increments' => true,
-			'order_by' => 'clients.name',
-			'keystone_attributes' => 'dynatron/iam::client:%id%:attributes',
+			'order_by' => 'ClientTable.Name',
+			#'keystone_attributes' => 'dynatron/iam::client:%id%:attributes',
 			'map' => [
-				'id' => ['column' => 'id'],
-				'guid' => ['column' => 'guid'],
-				'name' => ['column' => 'name'],
-				'extract' => ['column' => 'extract'],
-				'hostKey' => ['column' => 'host'],
-
-				#'hostname' => ['column' => 'hosts.key', 'save' => false],
-				#'company' => ['column' => 'hosts.name', 'save' => false],
-				#'companyGuid' => ['column' => 'hosts.guid', 'save' => false],
-				#'server' => ['column' => 'hosts.server_num', 'save' => false],
-				#'serverNum' => ['column' => 'hosts.server_num', 'save' => false],
-
-				'addressID' => ['column' => 'address_id'],
-				'disabled' => ['column' => 'disabled', 'filter' => function($store) {
-					return (boolean) $store->disabled;
+				'id' => ['column' => 'ID'],
+				'guid' => ['column' => 'GUID'],
+				'name' => ['column' => 'Name'],
+				'addressID' => ['column' => 'AddressID'],
+				'note' => ['column' => 'Note'],
+				'disabled' => ['column' => 'Disabled', 'filter' => function($store) {
+					return (boolean) $store->Disabled;
 				}],
-				'created' => ['column' => 'created_at'],
-				'updated' => ['column' => 'updated_at'],
 
 				// Relationships
-				#'host' => ['entity' => 'host', 'table' => 'hosts'],
-				#'address' => ['entity' => 'address', 'table' => 'addresses'],
-				#'groups' => ['entity' => 'group', 'table' => 'groups'],
+				'address' => ['entity' => 'address', 'table' => 'AddressTable'],
+				'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
 			]
 		];
-
-		// Always include hosts
-		#$this->with('host'); // NO, do it manually...or I do it if you select on legacy columns like serverNum or hostname
 	}
 
 	/**
@@ -136,14 +122,6 @@ class ClientStore extends DbStore implements ClientStoreInterface
 	}
 
 	/**
-	 * Add host join to query
-	 */
-	public function joinHost()
-	{
-		$this->join('host', 'client.hostKey', '=', 'host.key');
-	}
-
-	/**
 	 * Merge address subentity with client
 	 * @param  \Illuminate\Support\Collection $clients
 	 */
@@ -152,18 +130,6 @@ class ClientStore extends DbStore implements ClientStoreInterface
 		$addresses = app($this->realNamespace())->address->where('id', 'in', $clients->lists('addressID'))->get();
 		foreach ($clients as $client) {
 			$client->address = isset($addresses[$client->addressID]) ? $addresses[$client->addressID]: null;
-		}
-	}
-
-	/**
-	 * Merge host subentity with client
-	 * @param  \Illuminate\Support\Collection $clients
-	 */
-	protected function mergeHost($clients)
-	{
-		$hosts = app($this->realNamespace())->host->where('key', 'in', $clients->lists('hostKey'))->showDisabled()->get();
-		foreach ($clients as $client) {
-			$client->host = isset($hosts[$client->hostKey]) ? $hosts[$client->hostKey]: null;
 		}
 	}
 

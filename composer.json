@@ -19,9 +19,11 @@
 		}
 	],
 	"autoload": {
+	    "classmap": [
+	        "Fake/Database"
+        ],
 		"psr-4": {
-			"Mreschke\\Repository\\": "",
-			"Mreschke\\Repository\\Fake\\": "Tests\\Fake"
+			"Mreschke\\Repository\\": ""
 		}
 	}
 }

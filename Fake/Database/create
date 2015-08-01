@@ -1,0 +1,6 @@
+base="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+system="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../../../../../System && pwd )"
+
+cat /dev/null > $base/test.sqlite
+$system/artisan migrate --database=fake-repository --path=../Apps/Mreschke/Repository/Fake/Database/Migrations/
+$system/artisan db:seed --database=fake-repository --class="FakeSeeder"

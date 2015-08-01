@@ -1,5 +1,6 @@
 <?php namespace Mreschke\Repository\Providers;
 
+use Config;
 use Module;
 use Mreschke\Repository\Fake\Fake;
 use Illuminate\Support\ServiceProvider;
@@ -40,27 +41,26 @@ class RepositoryServiceProvider extends ServiceProvider {
 		// Mrcore Module Tracking
 		Module::trace(get_class(), __function__);
 
-
 		// Setup Testing Environment
-		$this->setupTesting();
+		$this->setupTestingEnvironment();
 
 	}
 
-	public function setupTesting()
+	/**
+	 * Sorry...dont know how to test properly...this is all I got right now
+	 * @return void
+	 */
+	public function setupTestingEnvironment()
 	{
-
-		// Add our database connections (has to be outside env check because migrations use it)
-		\Config::set('database.connections.test-repository-db', [
-			'driver'   => 'sqlite',
-			'database' => realpath(__DIR__.'/../Tests/Fake/Database/test.sqlite'),
-			'prefix'   => '',
-		]);
-		#dd(\Config::get('database.connections'));
-
 		// Testing - Entire fake entity and repository for testing
-		if ($this->app->environment('testing')) {
+		if ($this->app->environment('testing') || $this->app->runningInConsole()) {
 
-
+			// Add our database connections (has to be outside env check because migrations use it)
+			Config::set('database.connections.fake-repository', [
+				'driver'   => 'sqlite',
+				'database' => realpath(__DIR__.'/../Fake/Database/test.sqlite'),
+				'prefix'   => '',
+			]);
 
 			// Bind Main Class (singleton because it caches the entities and stores)
 			$this->app->singleton('Mreschke\Repository\Fake\Fake', function($app) {
@@ -69,7 +69,7 @@ class RepositoryServiceProvider extends ServiceProvider {
 			$this->app->alias('Mreschke\Repository\Fake\Fake', 'Mreschke\Repository\Fake');
 
 			// Merge config
-			$this->mergeConfigFrom(__DIR__.'/../Tests/Fake/Config/fake.php', 'mreschke.repository.fake');
+			$this->mergeConfigFrom(__DIR__.'/../Fake/Config/fake.php', 'mreschke.repository.fake');
 		}
 
 	}

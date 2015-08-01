@@ -76,7 +76,6 @@ abstract class MongoStore extends Store implements StoreInterface
 	{
 		// Get results
 		return $this->transaction(function() {
-			dd('x');
 			$results = $this->table()->find($this->buildWhereAnd(), $this->select ?: []);
 			#$results = $this->table()->find();
 			#dd(array('name' => array('$in' => array('Joe', 'Wendy'))));
