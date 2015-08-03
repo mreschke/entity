@@ -5,8 +5,9 @@ use Mreschke\Repository\Fake\Stores\AddressStoreInterface;
 
 /**
  * Fake Address Store
- * @copyright Dynatron Software, Inc.
- * @author Matthew Reschke <mreschke@dynatronsoftware.com>
+ * @copyright 2015 Matthew Reschke
+ * @license http://mreschke.com/license/mit
+ * @author Matthew Reschke <mail@mreschke.com>
  */
 class AddressStore extends MongoStore implements AddressStoreInterface
 {
@@ -17,7 +18,7 @@ class AddressStore extends MongoStore implements AddressStoreInterface
 	protected function init() {
 		$this->attributes = [
 			'entity' => 'address',
-			'table' => 'addresses',
+			'table' => 'AddressTable',
 			'primary' => '_id',
 			'increments' => true,
 			'indexes' => [

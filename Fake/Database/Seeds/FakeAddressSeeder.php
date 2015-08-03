@@ -4,7 +4,6 @@ use Illuminate\Database\Seeder;
 
 class FakeAddressSeeder extends Seeder
 {
-
 	public function run()
 	{
 		$fake = App::make('Mreschke\Repository\Fake');

@@ -11,12 +11,19 @@ return [
 		'database' => [
 			[
 				'driver' => 'db',
-				'connection' => 'fake-repository',
+				'connection' => 'fake2-repository',
 				'entities' => [
-					'address',
-					'client'
+					'clientInfo',
+					'product'
 				]
 			],
+			[
+				'driver' => 'db',
+				'connection' => 'fake-repository',
+				'entities' => [
+					'client'
+				]
+			]
 		],
 
 		'mongo' => [
@@ -24,14 +31,23 @@ return [
 				'driver' => 'mongo',
 				'host' => 'localhost',
 				'port' => 27017,
-				'database' => 'fake-repository',
+				'database' => 'fake2-repository',
 				'entities' => [
-					'address',
-					'client'
+					'clientInfo',
+					'product'
 				]
 			],
+			[
+				'driver' => 'mongo',
+				'host' => 'localhost',
+				'port' => 27017,
+				'database' => 'fake-repository',
+				'entities' => [
+					'client'
+				]
+			]
 		]
 
-	],
-
+	]
+	
 ];

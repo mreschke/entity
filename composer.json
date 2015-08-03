@@ -20,7 +20,8 @@
 	],
 	"autoload": {
 	    "classmap": [
-	        "Fake/Database"
+	        "Fake/Database",
+	        "Fake2/Database"
         ],
 		"psr-4": {
 			"Mreschke\\Repository\\": ""

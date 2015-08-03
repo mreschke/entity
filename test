@@ -3,5 +3,5 @@
 app="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 system="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../ && cd ../ && cd ../ && pwd )/System"
 cd $system
-phpunit $app/Tests/
+phpunit $app/Tests/ "$@"
 

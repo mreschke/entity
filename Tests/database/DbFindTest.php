@@ -8,6 +8,7 @@ class DbFindTest extends TestCase
 	{
 		parent::setUp();
 		$this->fake = $this->app->make('Mreschke\Repository\Fake')->store('database');
+		$this->fake2 = $this->app->make('Mreschke\Repository\Fake2')->store('database');
 	}
 	public function tearDown()
 	{
@@ -15,7 +16,7 @@ class DbFindTest extends TestCase
 	}
 
 	public function testFindOne()
-	{
+	{	
 		$client = $this->fake->client->find(1);
 		$this->assertInstanceOf('Mreschke\Repository\Fake\Client', $client);
 		$this->assertSame((array) $client, $this->client1Stub());

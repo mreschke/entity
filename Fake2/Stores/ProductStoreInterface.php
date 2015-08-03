@@ -1,12 +1,12 @@
-<?php namespace Mreschke\Repository\Fake\Stores;
+<?php namespace Mreschke\Repository\Fake2\Stores;
 
 /**
- * Fake Address Store Interface
+ * Fake2 Product Store Interface
  * @copyright 2015 Matthew Reschke
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-interface AddressStoreInterface
+interface ProductStoreInterface
 {
 	//
 }

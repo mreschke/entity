@@ -26,19 +26,19 @@ class Manager
 	 * The array of resolvable entity classes
 	 * @var array
 	 */
-	protected $resolvable = [];
+	protected $resolvable;
 
 	/**
 	 * The cached array of resolved entities
 	 * @var array
 	 */
-	protected $entities = [];
+	protected $entities;
 
 	/**
 	 * The cached array of resolved stores
 	 * @var array
 	 */
-	protected $stores = [];
+	protected $stores;
 
 	/**
 	 * One time store override
@@ -63,13 +63,13 @@ class Manager
 	 */
 	protected function resolveEntity($entityKey)
 	{
-		// Get entity store instance
-		$storeKey = $this->storeKey($entityKey);
-		$storeClassname = $this->storeClassname($storeKey, $entityKey);
-		$store = $this->resolveStore($storeKey, $entityKey);
-
 		// Get entity classname
 		$entityClassname = $this->entityClassname($entityKey);
+
+		// Get entity store instance
+		$storeKey = $this->storeKey();
+		$storeClassname = $this->storeClassname($storeKey, $entityKey);
+		$store = $this->resolveStore($storeKey, $storeClassname, $entityKey, $entityClassname);
 
 		// Create new entity instance if not found in cache
 		$entityCacheKey = "$storeKey-$entityKey";
@@ -87,21 +87,17 @@ class Manager
 	/**
 	 * Get a store instance
 	 * @param  string $storeKey
+	 * @param  string $storeClassname
 	 * @param  string $entityKey
+	 * @param  string $entityClassnmae
 	 * @return object
 	 */
-	protected function resolveStore($storeKey, $entityKey)
+	protected function resolveStore($storeKey, $storeClassname, $entityKey, $entityClassname)
 	{
-		// Get entity classname
-		$entityClassname = $this->entityClassname($entityKey);
-
-		// Get entity store classname
-		$storeClassname = $this->storeClassname($storeKey, $entityKey);
-
 		// Create new entity store instance if not found in cache
 		if (!isset($this->stores[$storeClassname])) {
-			$config = $this->config("stores.{$storeKey}");
-			$driver = $this->config("stores.{$storeKey}.driver");
+			$config = $this->entityConfig($storeKey, $entityKey);
+			$driver = $config['driver'];
 
 			// Check for custom store factory first
 			$factory = "create".studly_case($driver).studly_case($entityKey)."Store";
@@ -181,29 +177,21 @@ class Manager
 	 */
 	protected function storeClassname($storeKey, $entityKey)
 	{
-		$driver = $this->config("stores.{$storeKey}.driver");
+		$driver = $this->entityConfig($storeKey, $entityKey)['driver'];
 		return $this->namespace.'\\Stores\\'.studly_case($driver).'\\'.studly_case($entityKey).'Store';
 	}
 
 	/**
 	 * Get store key from default, enity map override or one time property
-	 * @param  string $entityKey
 	 * @return string
 	 */
-	protected function storeKey($entityKey)
+	protected function storeKey()
 	{
 		if ($this->storeKey) {
 			// Use one time store
 			$storeKey = $this->storeKey;
 		} else {
-			$entities = $this->config('entities');
-			if (isset($entities[$entityKey])) {
-				// Use custom entity store
-				$storeKey = $entities[$entityKey]['store'];
-			} else {
-				// Use default store
-				$storeKey = $this->config('default');
-			}
+			$storeKey = $this->config('default');
 		}
 		return $storeKey;
 	}
@@ -227,6 +215,44 @@ class Manager
 	public function config($name)
 	{
 		return $this->app['config'][$this->configKey.".$name"];
+	}
+
+	/**
+	 * Get the config options for this store/entity
+	 * @param  string $storeKey
+	 * @param  string $entityKey
+	 * @return array
+	 */
+	public function entityConfig($storeKey, $entityKey)
+	{
+		$connections = $this->config('stores')[$storeKey];
+		foreach ($connections as $connection) {
+			if (in_array($entityKey, $connection['entities'])) {
+				unset($connection['entities']);
+				return $connection;
+			}
+		}
+	}
+
+	/**
+	 * Get distinct entities from config
+	 * @return array
+	 */
+	protected function resolvable()
+	{
+		// Find distinct entites found in config and cache in $this->resolvable
+		if (!isset($this->resolvable)) {
+			$this->resolvable = [];
+			$connections = $this->config('stores.'.$this->storeKey());
+			foreach ($connections as $connection) {
+				foreach ($connection['entities'] as $entity) {
+					if (!in_array($entity, $this->resolvable)) {
+						$this->resolvable[] = $entity;
+					}
+				}
+			}
+		}
+		return $this->resolvable;
 	}
 
 	/**
@@ -257,14 +283,14 @@ class Manager
 
 	/**
 	 * Dynamically call entity classes
-	 * @param  string  $entity
+	 * @param  string  $entityKey
 	 * @param  array   $parameters
 	 * @return mixed
 	 */
-	public function __call($entity, $parameters)
+	public function __call($entityKey, $parameters)
 	{
-		if (in_array($entity, $this->resolvable)) {
-			return $this->resolveEntity($entity);
+		if (in_array($entityKey, $this->resolvable())) {
+			return $this->resolveEntity($entityKey);
 		}
 	}
 

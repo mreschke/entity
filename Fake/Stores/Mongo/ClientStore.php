@@ -5,8 +5,9 @@ use Mreschke\Repository\Fake\Stores\ClientStoreInterface;
 
 /**
  * Fake Client Store
- * @copyright Dynatron Software, Inc.
- * @author Matthew Reschke <mreschke@dynatronsoftware.com>
+ * @copyright 2015 Matthew Reschke
+ * @license http://mreschke.com/license/mit
+ * @author Matthew Reschke <mail@mreschke.com>
  */
 class ClientStore extends MongoStore implements ClientStoreInterface
 {
@@ -17,7 +18,7 @@ class ClientStore extends MongoStore implements ClientStoreInterface
 	protected function init() {
 		$this->attributes = [
 			'entity' => 'client',
-			'table' => 'clients',
+			'table' => 'ClientTable',
 			'primary' => '_id',
 			'increments' => true,
 			'indexes' => [
@@ -30,7 +31,6 @@ class ClientStore extends MongoStore implements ClientStoreInterface
 					// Convert mongo id object into hex string
 					return (string) $store->_id;
 				}],
-				'id' => ['column' => 'ID'],
 				'guid' => ['column' => 'GUID'],
 				'name' => ['column' => 'Name'],
 				'addressID' => ['column' => 'AddressID'],

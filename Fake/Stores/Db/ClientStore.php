@@ -5,8 +5,9 @@ use Mreschke\Repository\Fake\Stores\ClientStoreInterface;
 
 /**
  * Fake Client Store
- * @copyright Dynatron Software, Inc.
- * @author Matthew Reschke <mreschke@dynatronsoftware.com>
+ * @copyright 2015 Matthew Reschke
+ * @license http://mreschke.com/license/mit
+ * @author Matthew Reschke <mail@mreschke.com>
  */
 class ClientStore extends DbStore implements ClientStoreInterface
 {

@@ -4,5 +4,5 @@ base="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 system="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../../../../../System && pwd )"
 
 cat /dev/null > $base/test.sqlite
-$system/artisan migrate --database=fake-repository --path=../Apps/Mreschke/Repository/Fake/Database/Migrations/
-$system/artisan db:seed --database=fake-repository --class="FakeSeeder"
+$system/artisan migrate --database=fake2-repository --path=../Apps/Mreschke/Repository/Fake2/Database/Migrations/
+$system/artisan db:seed --database=fake2-repository --class="Fake2Seeder"

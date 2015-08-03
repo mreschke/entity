@@ -3,8 +3,9 @@
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Eloquent\Model;
 
-class FakeSeeder extends Seeder
+class Fake2Seeder extends Seeder
 {
+
 	/**
 	 * Run the database seeds.
 	 *
@@ -14,9 +15,10 @@ class FakeSeeder extends Seeder
 	{
 		Model::unguard();
 
-		// Order is Critical
-		$this->call('FakeAddressSeeder');
-		$this->call('FakeClientSeeder');
+        // Order is Critical
+        $this->call('Fake2ProductSeeder');
+		$this->call('Fake2ClientInfoSeeder');
+		#$this->call('Fake2ClientProductSeeder');
 	}
 
 }

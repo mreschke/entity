@@ -3,6 +3,7 @@
 use Config;
 use Module;
 use Mreschke\Repository\Fake\Fake;
+use Mreschke\Repository\Fake2\Fake2;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -47,7 +48,8 @@ class RepositoryServiceProvider extends ServiceProvider {
 	}
 
 	/**
-	 * Sorry...dont know how to test properly...this is all I got right now
+	 * If running in test environment, append test configs and singletons
+	 * 
 	 * @return void
 	 */
 	public function setupTestingEnvironment()
@@ -70,6 +72,23 @@ class RepositoryServiceProvider extends ServiceProvider {
 
 			// Merge config
 			$this->mergeConfigFrom(__DIR__.'/../Fake/Config/fake.php', 'mreschke.repository.fake');
+
+			// Fake 2 (second fake test repository)
+			Config::set('database.connections.fake2-repository', [
+				'driver'   => 'sqlite',
+				'database' => realpath(__DIR__.'/../Fake2/Database/test.sqlite'),
+				'prefix'   => '',
+			]);
+
+			// Bind Main Class (singleton because it caches the entities and stores)
+			$this->app->singleton('Mreschke\Repository\Fake2\Fake2', function($app) {
+				return new Fake2($app);
+			});
+			$this->app->alias('Mreschke\Repository\Fake2\Fake2', 'Mreschke\Repository\Fake2');
+
+			// Merge config
+			$this->mergeConfigFrom(__DIR__.'/../Fake2/Config/fake2.php', 'mreschke.repository.fake2');
+
 		}
 
 	}
