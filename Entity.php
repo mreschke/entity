@@ -63,6 +63,17 @@ abstract class Entity
 	}
 
 	/**
+	 * Select columns from a collection (post query)
+	 * @param  \Illuminate\Support\Collection $items
+	 * @param  array $select must be entity columns, not store columns so reverse map
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function selectCollection($items, $select)
+	{
+		return $this->store->selectCollection($items, $select);
+	}
+
+	/**
 	 * Add additional select(s) to the query
 	 * @param  array
 	 * @return void

@@ -541,7 +541,7 @@ abstract class Store
 	 * @param  array $select must be entity columns, not store columns so reverse map
 	 * @return \Illuminate\Support\Collection
 	 */
-	protected function selectCollection($items, $select)
+	public function selectCollection($items, $select)
 	{
 		if (isset($select)) {
 			// Custom select, return modify collection
