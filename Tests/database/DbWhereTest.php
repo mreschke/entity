@@ -1,17 +1,13 @@
-<?php
+<?php namespace Mreschke\Repository;
 
+use TestCase;
 use Mockery as m;
 
 class DbWhereTest extends TestCase
 {
-	public function setUp()
+	public function init()
 	{
-		parent::setUp();
 		$this->fake = $this->app->make('Mreschke\Repository\Fake')->store('database');
-	}
-	public function tearDown()
-	{
-		m::close();
 	}
 
 	public function testWhereNoResult()
@@ -141,5 +137,11 @@ class DbWhereTest extends TestCase
 		];
 	}
 
+	public function tearDown() { m::close(); }
+	public function setUp()
+	{
+		parent::setUp();
+		$this->init();
+	}
 
 }

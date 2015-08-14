@@ -499,8 +499,10 @@ abstract class Store
 			}
 
 			// If using custom select or join there will be other unmapped keys
-			foreach ($unmappedKeys as $key => $value) {
-				$entity->$key = $value;
+			if (isset($this->select)) {
+				foreach ($unmappedKeys as $key => $value) {
+					$entity->$key = $value;
+				}
 			}
 
 			// Call a postTransformStore method if exists

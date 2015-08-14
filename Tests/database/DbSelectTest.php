@@ -1,17 +1,13 @@
-<?php
+<?php namespace Mreschke\Repository;
 
+use TestCase;
 use Mockery as m;
 
 class DbSelectTest extends TestCase
 {
-	public function setUp()
+	public function init()
 	{
-		parent::setUp();
 		$this->fake = $this->app->make('Mreschke\Repository\Fake')->store('database');
-	}
-	public function tearDown()
-	{
-		m::close();
 	}
 
 	public function testSelectFind()
@@ -75,6 +71,13 @@ class DbSelectTest extends TestCase
 			"disabled" => false,
 		]);
 		#dd($client);
+	}
+
+	public function tearDown() { m::close(); }
+	public function setUp()
+	{
+		parent::setUp();
+		$this->init();
 	}
 
 }

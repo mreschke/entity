@@ -1,5 +1,6 @@
-<?php
+<?php namespace Mreschke\Repository;
 
+use TestCase;
 use Mockery as m;
 
 class AAAPlayTest extends TestCase
