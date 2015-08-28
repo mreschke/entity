@@ -188,6 +188,28 @@ abstract class Store
 	}
 
 	/**
+	 * Set the offset for the query
+	 * @param  integer $offset
+	 * @return $this
+	 */
+	public function skip($offset)
+	{
+		$this->limit['skip'] = $offset;
+		return $this;
+	}
+
+	/**
+	 * Set the limit for the query
+	 * @param  integer $limit
+	 * @return $this
+	 */
+	public function take($limit)
+	{
+		$this->limit['take'] = $limit;
+		return $this;
+	}
+
+	/**
 	 * Add a with relationship for the query
 	 * @param  string $properties
 	 * @return $this

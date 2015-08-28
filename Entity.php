@@ -145,6 +145,28 @@ abstract class Entity
 	}
 
 	/**
+	 * Add an offset to the query
+	 * @param  integer $offset
+	 * @return $this
+	 */
+	public function skip($offset)
+	{
+		$this->store->skip($offset);
+		return $this;
+	}
+
+	/**
+	 * Add a limit to the query
+	 * @param  integer $limit
+	 * @return $this
+	 */
+	public function take($limit)
+	{
+		$this->store->take($limit);
+		return $this;
+	}
+
+	/**
 	 * Find a record by id or key
 	 * @param  mixed $id = null
 	 * @return object
