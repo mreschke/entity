@@ -3,5 +3,15 @@
 app="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 system="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../ && cd ../ && cd ../ && pwd )/System"
 cd $system
-phpunit $app/Tests/ "$@"
+
+args="$@"
+if [ ! -z "$args" ]; then
+    if [ ${args:0:4} == "play" ]; then
+        phpunit $app/Tests/ $args
+    else
+        phpunit $args $app/Tests/
+    fi
+else
+    phpunit $app/Tests/
+fi
 
