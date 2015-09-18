@@ -241,7 +241,7 @@ abstract class Entity
 				$originalValue = $this->attributes($key);
 				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
-				$this->manager->attribute->create([
+				$this->entityManager->attribute->create([
 					'key' => "$entity:$entityID:$key",
 					'entity' => $entity,
 					'entityID' => $entityID,
@@ -270,7 +270,7 @@ abstract class Entity
 
 			// Get all attributes
 			if (!isset($this->attributes)) {
-				$items = $this->manager->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
+				$items = $this->entityManager->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
 				if (isset($items)) {
 					$this->attributes = [];
 					foreach ($items as $item) {
@@ -305,7 +305,7 @@ abstract class Entity
 		$value = $this->attributes($key);
 		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
 
-		$attribute = $this->manager->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
+		$attribute = $this->entityManager->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
 		if (isset($attribute)) {
 			$attribute->delete();
 		}
@@ -344,8 +344,8 @@ abstract class Entity
 	public function whereAttribute($key, $value)
 	{
 		$entity = $this->store->attributes('entity');
-		$entityIDs = $this->manager->attribute->select('entityID')->where('entity', $entity)->where('index', $key)->where('value', $value)->get()->lists('entityID');
-		$entities = $this->manager->$entity->with('attributes')->where('id', 'in', $entityIDs)->get();
+		$entityIDs = $this->entityManager->attribute->select('entityID')->where('entity', $entity)->where('index', $key)->where('value', $value)->get()->lists('entityID');
+		$entities = $this->entityManager->$entity->with('attributes')->where('id', 'in', $entityIDs)->get();
 		return $entities;
 	}
 
@@ -476,6 +476,15 @@ abstract class Entity
 			$this->repository = $storeClassname;
 		}
 		return $this->repository;
+	}
+
+	/**
+	 * Get manager for entity
+	 * @return object
+	 */
+	protected function entityManager()
+	{
+		return app($this->realNamespace());
 	}
 
 	/**

@@ -22,7 +22,7 @@ class CreateAttributesFake extends Migration {
 
 			// Indexes
 			$table->index(['entity', 'entity_id', 'key']);
-			$table->index(['key', 'value']);
+			#$table->index(['key', 'value']); // NO, cannot add index on BLOG text column
 
 		});
 	}
