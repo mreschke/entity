@@ -28,7 +28,6 @@ class ClientStore extends DbStore implements ClientStoreInterface
 			'primary' => 'ID',
 			'increments' => true,
 			'order_by' => 'ClientTable.Name',
-			#'keystone_attributes' => 'dynatron/iam::client:%id%:attributes',
 			'map' => [
 				'id' => ['column' => 'ID'],
 				'guid' => ['column' => 'GUID'],
@@ -40,8 +39,9 @@ class ClientStore extends DbStore implements ClientStoreInterface
 				}],
 
 				// Relationships
+				'attributes' => ['entity' => 'attribute', 'table' => 'AttributeTable'],
 				'address' => ['entity' => 'address', 'table' => 'AddressTable'],
-				'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
+				'groups' => ['entity' => 'group', 'table' => 'GroupTable'],
 			]
 		];
 	}

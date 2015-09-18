@@ -25,7 +25,6 @@ class ClientStore extends MongoStore implements ClientStoreInterface
 				['key' => 'address', 'options' => ['unique' => false]]
 			],
 			'order_by' => 'ClientTable.Name',
-			#'keystone_attributes' => 'dynatron/iam::client:%id%:attributes',
 			'map' => [
 				'id' => ['column' => '_id', 'filter' => function($store) {
 					// Convert mongo id object into hex string
@@ -40,8 +39,9 @@ class ClientStore extends MongoStore implements ClientStoreInterface
 				}],
 
 				// Relationships
+				'attributes' => ['entity' => 'attribute', 'table' => 'AttributeTable'],
 				'address' => ['entity' => 'address', 'table' => 'AddressTable'],
-				'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
+				'groups' => ['entity' => 'group', 'table' => 'GroupTable'],
 			]
 		];
 	}

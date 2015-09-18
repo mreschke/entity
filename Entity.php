@@ -19,14 +19,6 @@ abstract class Entity
 	public $repository;
 
 	/**
-	 * Get the keystone instance
-	 * @return \Mreschke\Keystone\Keystone
-	 */
-	protected function keystone() {
-		return App::make( 'Mreschke\Keystone');
-	}
-
-	/**
 	 * Create a new entity instance
 	 * @param string $storeClassname
 	 */
@@ -231,53 +223,67 @@ abstract class Entity
 	 */
 	public function attributes($key = null, $value = null)
 	{
-		if ($keystoneKey = $this->attributesKeystoneKey()) {
-			if (isset($key)) {
-				// Attribute keys are always underscore
-				$key = snake_case(str_replace("-", "_", str_slug($key)));
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		$entity = $this->store->attributes('entity');
+		$entityID = $this->$primary;
 
-				if (isset($value)) {
+		// Not working on individual entity or attributes not available/enabled for this entity
+		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return 's';
 
-					// Set a single attribute
-					$originalValue = $this->attributes($key);
-					if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]) === false) return false;
+		if (isset($key)) {
 
-					$this->keystone()->push($keystoneKey, [$key => $value]);
+			// Attribute keys are always underscore
+			$key = snake_case(str_replace("-", "_", str_slug($key)));
 
-					$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]);
+			if (isset($value)) {
 
-					// Refresh attributes
-					$this->attributes = null; $this->attributes();
-					return $this->attributes($key);
+				// Set a single attribute
+				$originalValue = $this->attributes($key);
+				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
-				} else {
+				$this->manager->attribute->create([
+					'key' => "$entity:$entityID:$key",
+					'entity' => $entity,
+					'entityID' => $entityID,
+					'index' => $key,
+					'value' => $value
+				]);
 
-					// Getting a single attribute
-					if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
-						return $this->attributes[$key];
-					} else {
-						return null;
-					}
-				}
+				$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue]);
+
+				// Refresh attributes
+				unset($this->attributes);
+				return $this->attributes($key);
 
 			} else {
 
-				// Get all attributes
-				if (!isset($this->attributes)) {
-					$items = $this->keystone()->get($keystoneKey);
+				// Getting a single attribute
+				if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
+					return $this->attributes[$key];
+				} else {
+					return null;
+				}
+			}
+
+
+		} else {
+
+			// Get all attributes
+			if (!isset($this->attributes)) {
+				$items = $this->manager->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
+				if (isset($items)) {
 					$this->attributes = [];
-					if (isset($items)) {
-						foreach ($items as $item => $value) {
-							if ($value == '') {
-								$this->attributes[$item] = null;
-							} else {
-								$this->attributes[$item] = String::unserialize($value);
-							}
-						}
+					foreach ($items as $item) {
+						// I don't think I should worry about serialization, do it manually for attributes
+						#$this->attributes[$item->index] = $item->value ? String::unserialize($item->value) : null;
+						#$this->attributes[$item->index] = $item->value ?: null;
+						$this->attributes[$item->index] = $item->value;
+
 					}
 				}
-				return $this->attributes;
 			}
+			return @$this->attributes;
+
 		}
 	}
 
@@ -288,37 +294,59 @@ abstract class Entity
 	 */
 	public function forgetAttribute($key)
 	{
-		if ($keystoneKey = $this->attributesKeystoneKey()) {
-			// Deleting a key
-			$value = $this->attributes($key);
-			if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]) === false) return false;
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		$entity = $this->store->attributes('entity');
+		$entityID = $this->$primary;
 
-			$this->keystone()->forget($keystoneKey, $key);
+		// Not working on individual entity or attributes not available/enabled for this entity
+		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return;
 
-			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]);
+		// Deleting a key
+		$value = $this->attributes($key);
+		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
 
-			// Refresh attributes
-			$this->attributes = null;
-			return $value;
+		$attribute = $this->manager->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
+		if (isset($attribute)) {
+			$attribute->delete();
 		}
+
+		$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value]);
+
+		// Refresh attributes
+		unset($this->attributes);
+		$this->attributes();
+		return $value;
 	}
 
 	/**
-	 * Get this entities attribute keystone key
-	 * @return string
+	 * Remove all entity attributes
+	 * @return mixed
 	 */
-	protected function attributesKeystoneKey()
+	public function truncateAttributes()
 	{
-		$primary = $this->store->map($this->store->attributes('primary'), true);
-		$keystoneKey = $this->store->attributes('keystone_attributes');
-
-		if (isset($this->$primary) && isset($keystoneKey)) {
-			preg_match("'%(.*)%'", $this->store->attributes('keystone_attributes'), $matches);
-			if (count($matches) == 2) {
-				$keystoneKey = preg_replace("/$matches[0]/", $this->$matches[1], $this->store->attributes('keystone_attributes'));
+		// I want to loop and delete, so that all individual forget events are fired
+		unset($this->attributes);
+		$attributes = $this->attributes();
+		if (isset($attributes)) {
+			foreach ($this->attributes as $key => $value) {
+				$this->forgetAttribute($key);
 			}
-			return $keystoneKey;
 		}
+		return $attributes;
+	}
+
+	/**
+	 * Find all entities matching this attribute
+	 * @param  string $key
+	 * @param  mixed $value
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function whereAttribute($key, $value)
+	{
+		$entity = $this->store->attributes('entity');
+		$entityIDs = $this->manager->attribute->select('entityID')->where('entity', $entity)->where('index', $key)->where('value', $value)->get()->lists('entityID');
+		$entities = $this->manager->$entity->with('attributes')->where('id', 'in', $entityIDs)->get();
+		return $entities;
 	}
 
 	/**
