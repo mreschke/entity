@@ -102,6 +102,24 @@ abstract class Entity
 	}
 
 	/**
+	 * Find all entities matching this attribute
+	 * @param  string  $column
+	 * @param  string  $operator
+	 * @param  mixed   $value
+	 * @return \Illuminate\Support\Collection
+	 */
+	public function whereAttribute($column, $operator = null, $value = null)
+	{
+		if (func_num_args() >= 2) {
+			if (func_num_args() == 2) {
+				list($value, $operator) = array($operator, '=');
+			}
+			$this->store->whereAttribute($column, $operator, $value);
+		}
+		return $this;
+	}
+
+	/**
 	 * Set the search query filter
 	 * @param  string $query
 	 * @return $this
@@ -221,7 +239,7 @@ abstract class Entity
 	 * @param  mixed $value
 	 * @return mixed
 	 */
-	public function attributes($key = null, $value = null)
+	public function attributesXXX_FIRST_MYSQL($key = null, $value = null)
 	{
 		$primary = $this->store->map($this->store->attributes('primary'), true);
 		$entity = $this->store->attributes('entity');
@@ -241,7 +259,7 @@ abstract class Entity
 				$originalValue = $this->attributes($key);
 				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
-				$this->entityManager->attribute->create([
+				$this->entityManager()->attribute->create([
 					'key' => "$entity:$entityID:$key",
 					'entity' => $entity,
 					'entityID' => $entityID,
@@ -270,7 +288,7 @@ abstract class Entity
 
 			// Get all attributes
 			if (!isset($this->attributes)) {
-				$items = $this->entityManager->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
+				$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
 				if (isset($items)) {
 					$this->attributes = [];
 					foreach ($items as $item) {
@@ -286,6 +304,82 @@ abstract class Entity
 
 		}
 	}
+
+	/**
+	 * Get or set entity attributes
+	 * @param  string $key
+	 * @param  mixed $value
+	 * @return mixed
+	 */
+	public function attributes($key = null, $value = null)
+	{
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		$entity = $this->store->attributes('entity');
+		$entityID = $this->$primary;
+
+		// Not working on individual entity or attributes not available/enabled for this entity
+		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return 's';
+
+		if (isset($key)) {
+
+			// Attribute keys are always underscore
+			$key = snake_case(str_replace("-", "_", str_slug($key)));
+
+			if (isset($value)) {
+
+				// Set a single attribute
+				$originalValue = $this->attributes($key);
+				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
+
+				$attributes = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				if (isset($attributes)) {
+					// Update attributes
+					$blob = json_decode($attributes->value, true);
+					$blob[$key] = $value;
+					$attributes->value = json_encode($blob);
+					$attributes->save();
+				} else {
+					// Create attributes
+					$this->entityManager()->attribute->create([
+						'entity' => $entity,
+						'entityID' => $entityID,
+						'value' => json_encode([$key => $value])
+					]);
+				}
+
+				$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue]);
+
+				// Refresh attributes
+				unset($this->attributes);
+				return $this->attributes($key);
+
+			} else {
+
+				// Getting a single attribute
+				if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
+					return $this->attributes[$key];
+				} else {
+					return null;
+				}
+			}
+
+
+		} else {
+
+			// Get all attributes
+			if (!isset($this->attributes)) {
+				$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				if (isset($items)) {
+					$this->attributes = json_decode($items->value, true);
+				}
+			}
+			return @$this->attributes;
+
+		}
+	}
+
+
+
 
 	/**
 	 * Forget an entity attribute
@@ -305,7 +399,7 @@ abstract class Entity
 		$value = $this->attributes($key);
 		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
 
-		$attribute = $this->entityManager->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
+		$attribute = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
 		if (isset($attribute)) {
 			$attribute->delete();
 		}
@@ -333,20 +427,6 @@ abstract class Entity
 			}
 		}
 		return $attributes;
-	}
-
-	/**
-	 * Find all entities matching this attribute
-	 * @param  string $key
-	 * @param  mixed $value
-	 * @return \Illuminate\Support\Collection
-	 */
-	public function whereAttribute($key, $value)
-	{
-		$entity = $this->store->attributes('entity');
-		$entityIDs = $this->entityManager->attribute->select('entityID')->where('entity', $entity)->where('index', $key)->where('value', $value)->get()->lists('entityID');
-		$entities = $this->entityManager->$entity->with('attributes')->where('id', 'in', $entityIDs)->get();
-		return $entities;
 	}
 
 	/**

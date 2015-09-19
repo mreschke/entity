@@ -687,13 +687,17 @@ abstract class Store
 		// Attributes not available/enabled for this entity
 		if (!array_key_exists('attributes', $this->attributes('map')))	return;
 
-		$attributes = $this->manager->attribute->where('entity', $entity)->where('entityID', 'in', $entities->lists($primary)->all())->get();
+		$attributes = $this->entityManager($entity)->attribute->where('entity', $entity)->where('entityID', 'in', $entities->lists($primary)->all())->get();
+
 		foreach ($attributes as $attribute) {
-			if (is_null($entities[$attribute->entityID]->attributes)) {
+			/*if (is_null($entities[$attribute->entityID]->attributes)) {
 				$entities[$attribute->entityID]->attributes = [];
 			}
-			$entities[$attribute->entityID]->attributes[$attribute->index] = $attribute->value;
+			$entities[$attribute->entityID]->attributes[$attribute->index] = $attribute->value;*/
+
+			$entities[$attribute->entityID]->attributes = json_decode($attribute->value, true);
 		}
+
 	}
 
 	/**
