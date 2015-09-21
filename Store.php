@@ -676,27 +676,6 @@ abstract class Store
 	}
 
 	/**
-	 * Merge entity (not store attributes) attributes subentity with client
-	 * @param  \Illuminate\Support\Collection $entities
-	 */
-	protected function mergeAttributes($entities)
-	{
-		$primary = $this->map($this->attributes('primary'), true);
-		$entity = $this->attributes('entity');
-
-		// Attributes not available/enabled for this entity
-		if (!array_key_exists('attributes', $this->attributes('map')))	return;
-
-		$attributes = $this->manager->attribute->where('entity', $entity)->where('entityID', 'in', $entities->lists($primary)->all())->get();
-		foreach ($attributes as $attribute) {
-			if (is_null($entities[$attribute->entityID]->attributes)) {
-				$entities[$attribute->entityID]->attributes = [];
-			}
-			$entities[$attribute->entityID]->attributes[$attribute->index] = $attribute->value;
-		}
-	}
-
-	/**
 	 * Get a query builder for this table
 	 * @param  string $table = null
 	 * @return \Illuminate\Database\Query\Builder
