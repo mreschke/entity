@@ -322,6 +322,60 @@ abstract class Entity
 	}
 
 	/**
+	 * Format each entity column according to its store attribute rules
+	 * @return void
+	 */
+	public function format() {
+		$map = $this->store->attributes('map');
+		foreach ($map as $property => $options) {
+			$type = isset($options['type']) ? $options['type'] : null;
+			if (isset($type)) {
+				$size = isset($options['size']) ? $options['size'] : null;
+				$nullable = isset($options['nullable']) ? $options['nullable'] : false;
+				$default = isset($options['default']) ? $options['default'] : null;
+				$trim = isset($options['trim']) ? $options['trim'] : true;
+
+				$value = $this->$property;
+				if (!$value) {
+					// Value is empty, set to proper empty value
+					switch ($type) {
+						case "string":
+							$value = $default ?: $nullable ? null : '';
+							break;
+						case "integer":
+							$value = $default ?: $nullable ? null : 0;
+							break;
+						case "boolean":
+							$value = $default ?: false;
+							break;
+					}
+				} else {
+
+					if (isset($size) && strlen($value) > $size) {
+						// event here, size will be truncated
+						$value = substr($value, 0, $size);
+						dd("FIXME, ADD EVENT, SIZE OVERFLOW in REPO ".$this->store->attributes('entity')." $property: $value");
+					}
+
+					switch ($type) {
+						case "string":
+							if ($trim) $value = trim($value);
+							break;
+						case "integer":
+							$value = (int) $value;
+							break;
+						case "boolean":
+							$value = (bool) $value;
+							break;
+					}
+
+				}
+				$this->$property = $value;
+			}
+		}
+	}
+
+	/**
 	 * Insert one or multiple records by array
 	 * @param  array $data
 	 * @return array|object|boolean

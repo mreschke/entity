@@ -656,7 +656,7 @@ abstract class Store
 
 	/**
 	 * Get one or all store attributes
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return mixed
 	 */
 	public function attributes($key = null)
@@ -672,6 +672,27 @@ abstract class Store
 		} elseif (isset($key) && isset($this->attributes[$key])) {
 			// Return individual attribute
 			return $this->attributes[$key];
+		}
+	}
+
+	/**
+	 * Get one or all store map properties and options
+	 * @param  string $property = null
+	 * @param  string $option = null
+	 * @return mixed
+	 */
+	public function properties($property = null, $option = null)
+	{
+		if (isset($property)) {
+			$map = $this->attributes('map');
+			if (isset($map[$property])) {
+				if (isset($option) && isset($map[$property][$option])) {
+					return $map[$property][$option];
+				}
+				return $map[$property];
+			}
+		} else {
+			return $this->attributes('map');
 		}
 	}
 
