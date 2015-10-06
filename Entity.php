@@ -346,19 +346,13 @@ abstract class Entity
 							$value = $default ?: $nullable ? null : 0;
 							break;
 						case "decimal":
-							$value = $default ?: $nullable ? null : 0;
+							$value = $default ?: $nullable ? null : 0.0;
 							break;
 						case "boolean":
 							$value = $default ?: false;
 							break;
 					}
 				} else {
-
-					if (isset($size) && strlen($value) > $size) {
-						// Column size overflow
-						$this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
-						$value = substr($value, 0, $size);
-					}
 
 					switch ($type) {
 						case "string":
@@ -368,11 +362,22 @@ abstract class Entity
 							$value = (int) $value;
 							break;
 						case "decimal":
-							$value = (float) $value;
+							if (isset($options['size'])) $options['size'] ++; //add one for decimal
+							if (isset($options['round'])) {
+								$value = round((float) $value, $options['round']);
+							} else {
+								$value = (float) $value;
+							}
 							break;
 						case "boolean":
 							$value = (bool) $value;
 							break;
+					}
+
+					if (isset($size) && strlen($value) > $size) {
+						// Column size overflow
+						$this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
+						$value = substr($value, 0, $size);
 					}
 
 				}
