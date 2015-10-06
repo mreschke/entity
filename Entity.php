@@ -345,6 +345,9 @@ abstract class Entity
 						case "integer":
 							$value = $default ?: $nullable ? null : 0;
 							break;
+						case "decimal":
+							$value = $default ?: $nullable ? null : 0;
+							break;
 						case "boolean":
 							$value = $default ?: false;
 							break;
@@ -352,9 +355,9 @@ abstract class Entity
 				} else {
 
 					if (isset($size) && strlen($value) > $size) {
-						// event here, size will be truncated
+						// Column size overflow
+						$this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
 						$value = substr($value, 0, $size);
-						dd("FIXME, ADD EVENT, SIZE OVERFLOW in REPO ".$this->store->attributes('entity')." $property: $value");
 					}
 
 					switch ($type) {
@@ -363,6 +366,9 @@ abstract class Entity
 							break;
 						case "integer":
 							$value = (int) $value;
+							break;
+						case "decimal":
+							$value = (float) $value;
 							break;
 						case "boolean":
 							$value = (bool) $value;
