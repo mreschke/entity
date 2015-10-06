@@ -331,6 +331,7 @@ abstract class Entity
 			$type = isset($options['type']) ? $options['type'] : null;
 			if (isset($type)) {
 				$size = isset($options['size']) ? $options['size'] : null;
+				$round = isset($options['round']) ? $options['round'] : null;
 				$nullable = isset($options['nullable']) ? $options['nullable'] : false;
 				$default = isset($options['default']) ? $options['default'] : null;
 				$trim = isset($options['trim']) ? $options['trim'] : true;
@@ -362,9 +363,9 @@ abstract class Entity
 							$value = (int) $value;
 							break;
 						case "decimal":
-							if (isset($options['size'])) $options['size'] ++; //add one for decimal
-							if (isset($options['round'])) {
-								$value = round((float) $value, $options['round']);
+							if (isset($size)) $size ++; //add one for decimal
+							if (isset($round)) {
+								$value = round((float) $value, $round);
 							} else {
 								$value = (float) $value;
 							}
