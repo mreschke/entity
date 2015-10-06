@@ -363,7 +363,11 @@ abstract class Entity
 							$value = (int) $value;
 							break;
 						case "decimal":
-							if (isset($size)) $size ++; //add one for decimal
+							if (isset($size)) {
+								// Add one to offset the decimal point in calculations
+								$options['size'] ++;
+								$size ++;
+							}
 							if (isset($round)) {
 								$value = round((float) $value, $round);
 							} else {
