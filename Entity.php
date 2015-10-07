@@ -322,11 +322,37 @@ abstract class Entity
 	}
 
 	/**
+	 * Get a list of all eneity properties
+	 * @return array
+	 */
+	public function properties()
+	{
+		$properties = [];
+		$items = $this->store->properties();
+		foreach ($items as $property => $options) {
+			$properties[] = [
+				'property' => $property,
+				'column' => isset($options['column']) ? $options['column'] : null,
+				'type' => isset($options['type']) ? $options['type'] : null,
+				'size' => isset($options['size']) ? $options['size'] : null,
+				'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
+				'default' => isset($options['default']) ? $options['default'] : null,
+				'entity' => isset($options['entity']) ? $options['entity'] : null,
+				'table' => isset($options['table']) ? $options['table'] : null,
+				'filter' => isset($options['filter']) ? true : false,
+				'likable' => isset($options['likable']) ? $options['likable'] : null,
+				'save' => isset($options['save']) ? $options['save'] : true,
+			];
+		}
+		return $properties;
+	}
+	
+	/**
 	 * Format each entity column according to its store attribute rules
 	 * @return void
 	 */
 	public function format() {
-		$map = $this->store->attributes('map');
+		$map = $this->store->properties();
 		foreach ($map as $property => $options) {
 			$type = isset($options['type']) ? $options['type'] : null;
 			if (isset($type)) {
