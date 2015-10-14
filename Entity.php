@@ -330,7 +330,7 @@ abstract class Entity
 		$properties = [];
 		$items = $this->store->properties();
 		foreach ($items as $property => $options) {
-			$properties[] = [
+			$properties[$property] = [
 				'property' => $property,
 				'column' => isset($options['column']) ? $options['column'] : null,
 				'type' => isset($options['type']) ? $options['type'] : null,
