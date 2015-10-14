@@ -335,18 +335,20 @@ abstract class Entity
 				'column' => isset($options['column']) ? $options['column'] : null,
 				'type' => isset($options['type']) ? $options['type'] : null,
 				'size' => isset($options['size']) ? $options['size'] : null,
+				'round' => isset($options['round']) ? $options['round'] : null,
 				'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
 				'default' => isset($options['default']) ? $options['default'] : null,
+				'trim' => isset($options['trim']) ? $options['trim'] : true,
 				'entity' => isset($options['entity']) ? $options['entity'] : null,
 				'table' => isset($options['table']) ? $options['table'] : null,
 				'filter' => isset($options['filter']) ? true : false,
-				'likable' => isset($options['likable']) ? $options['likable'] : null,
+				'likable' => isset($options['likable']) ? $options['likable'] : false,
 				'save' => isset($options['save']) ? $options['save'] : true,
 			];
 		}
 		return $properties;
 	}
-	
+
 	/**
 	 * Format each entity column according to its store attribute rules
 	 * @return void
