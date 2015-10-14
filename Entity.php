@@ -322,31 +322,48 @@ abstract class Entity
 	}
 
 	/**
-	 * Get a list of all eneity properties
-	 * @return array
+	 * Get a list of all or one entities properties and optionally an single option inside that property
+	 * @param string $property = null
+	 * @param $string $option = null
+	 * @return array|null
 	 */
-	public function properties()
+	public function properties($property = null, $option = null)
 	{
-		$properties = [];
 		$items = $this->store->properties();
-		foreach ($items as $property => $options) {
-			$properties[$property] = [
-				'property' => $property,
-				'column' => isset($options['column']) ? $options['column'] : null,
-				'type' => isset($options['type']) ? $options['type'] : null,
-				'size' => isset($options['size']) ? $options['size'] : null,
-				'round' => isset($options['round']) ? $options['round'] : null,
-				'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
-				'default' => isset($options['default']) ? $options['default'] : null,
-				'trim' => isset($options['trim']) ? $options['trim'] : true,
-				'entity' => isset($options['entity']) ? $options['entity'] : null,
-				'table' => isset($options['table']) ? $options['table'] : null,
-				'filter' => isset($options['filter']) ? true : false,
-				'likable' => isset($options['likable']) ? $options['likable'] : false,
-				'save' => isset($options['save']) ? $options['save'] : true,
-			];
+		if (isset($property)) {
+			// Get one property
+			if (isset($items[$property])) {
+				$property = $items[$property];
+				if (isset($option)) {
+					// Get a single option
+					return isset($property[$option]) ? $property[$option] : null;
+				} else {
+					// Get all options
+					return $property;
+				}
+			}
+		} else {
+			// Get all properties
+			$properties = [];
+			foreach ($items as $property => $options) {
+				$properties[$property] = [
+					'property' => $property,
+					'column' => isset($options['column']) ? $options['column'] : null,
+					'type' => isset($options['type']) ? $options['type'] : null,
+					'size' => isset($options['size']) ? $options['size'] : null,
+					'round' => isset($options['round']) ? $options['round'] : null,
+					'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
+					'default' => isset($options['default']) ? $options['default'] : null,
+					'trim' => isset($options['trim']) ? $options['trim'] : true,
+					'entity' => isset($options['entity']) ? $options['entity'] : null,
+					'table' => isset($options['table']) ? $options['table'] : null,
+					'filter' => isset($options['filter']) ? true : false,
+					'likable' => isset($options['likable']) ? $options['likable'] : false,
+					'save' => isset($options['save']) ? $options['save'] : true,
+				];
+			}
+			return $properties;
 		}
-		return $properties;
 	}
 
 	/**
