@@ -422,6 +422,12 @@ abstract class Store
 		if ($isArray) {
 			return $translated;
 		} else {
+			// FIXME, why if empty return items[0]?? can't remember
+			// test later once you get proper unit tests
+			// at this point, if you entered ->where('actual_column') instead of
+			// ->where('entityColumn') it actually STILL works.  This means you can use
+			// either property or column in your wheres, which I DON'T want as this lets
+			// you bypass the entire point of an entity mappper.
 			return empty($translated) ? $items[0] : $translated[0];
 		}
 	}
@@ -656,7 +662,7 @@ abstract class Store
 
 	/**
 	 * Get one or all store attributes
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return mixed
 	 */
 	public function attributes($key = null)
@@ -676,28 +682,24 @@ abstract class Store
 	}
 
 	/**
-	 * Merge entity (not store attributes) attributes subentity with client
-	 * @param  \Illuminate\Support\Collection $entities
+	 * Get one or all store map properties and options
+	 * @param  string $property = null
+	 * @param  string $option = null
+	 * @return mixed
 	 */
-	protected function mergeAttributes($entities)
+	public function properties($property = null, $option = null)
 	{
-		$primary = $this->map($this->attributes('primary'), true);
-		$entity = $this->attributes('entity');
-
-		// Attributes not available/enabled for this entity
-		if (!array_key_exists('attributes', $this->attributes('map')))	return;
-
-		$attributes = $this->entityManager($entity)->attribute->where('entity', $entity)->where('entityID', 'in', $entities->lists($primary)->all())->get();
-
-		foreach ($attributes as $attribute) {
-			/*if (is_null($entities[$attribute->entityID]->attributes)) {
-				$entities[$attribute->entityID]->attributes = [];
+		if (isset($property)) {
+			$map = $this->attributes('map');
+			if (isset($map[$property])) {
+				if (isset($option) && isset($map[$property][$option])) {
+					return $map[$property][$option];
+				}
+				return $map[$property];
 			}
-			$entities[$attribute->entityID]->attributes[$attribute->index] = $attribute->value;*/
-
-			$entities[$attribute->entityID]->attributes = json_decode($attribute->value, true);
+		} else {
+			return $this->attributes('map');
 		}
-
 	}
 
 	/**

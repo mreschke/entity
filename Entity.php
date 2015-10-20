@@ -19,6 +19,14 @@ abstract class Entity
 	public $repository;
 
 	/**
+	 * Get the keystone instance
+	 * @return \Mreschke\Keystone\Keystone
+	 */
+	protected function keystone() {
+		return App::make( 'Mreschke\Keystone');
+	}
+
+	/**
 	 * Create a new entity instance
 	 * @param string $storeClassname
 	 */
@@ -241,67 +249,62 @@ abstract class Entity
 	 */
 	public function attributesXXX_FIRST_MYSQL($key = null, $value = null)
 	{
-		$primary = $this->store->map($this->store->attributes('primary'), true);
-		$entity = $this->store->attributes('entity');
-		$entityID = $this->$primary;
+		if ($keystoneKey = $this->attributesKeystoneKey()) {
+			if (isset($key)) {
+				// Attribute keys are always underscore
+				$key = snake_case(str_replace("-", "_", str_slug($key)));
 
-		// Not working on individual entity or attributes not available/enabled for this entity
-		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return 's';
+				if (isset($value)) {
 
-		if (isset($key)) {
+					// Set a single attribute
+					$originalValue = $this->attributes($key);
+					if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]) === false) return false;
 
-			// Attribute keys are always underscore
-			$key = snake_case(str_replace("-", "_", str_slug($key)));
+					$this->keystone()->push($keystoneKey, [$key => $value]);
 
-			if (isset($value)) {
+					$this->entityManager()->attribute->create([
+						'key' => "$entity:$entityID:$key",
+						'entity' => $entity,
+						'entityID' => $entityID,
+						'index' => $key,
+						'value' => $value
+					]);
+					$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]);
 
-				// Set a single attribute
-				$originalValue = $this->attributes($key);
-				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
+					// Refresh attributes
+					$this->attributes = null; $this->attributes();
+					return $this->attributes($key);
 
-				$this->entityManager()->attribute->create([
-					'key' => "$entity:$entityID:$key",
-					'entity' => $entity,
-					'entityID' => $entityID,
-					'index' => $key,
-					'value' => $value
-				]);
+				} else {
 
-				$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue]);
-
-				// Refresh attributes
-				unset($this->attributes);
-				return $this->attributes($key);
+					// Getting a single attribute
+					if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
+						return $this->attributes[$key];
+					} else {
+						return null;
+					}
+				}
 
 			} else {
 
-				// Getting a single attribute
-				if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
-					return $this->attributes[$key];
-				} else {
-					return null;
-				}
-			}
-
-
-		} else {
-
-			// Get all attributes
-			if (!isset($this->attributes)) {
-				$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
-				if (isset($items)) {
-					$this->attributes = [];
-					foreach ($items as $item) {
-						// I don't think I should worry about serialization, do it manually for attributes
-						#$this->attributes[$item->index] = $item->value ? String::unserialize($item->value) : null;
-						#$this->attributes[$item->index] = $item->value ?: null;
-						$this->attributes[$item->index] = $item->value;
-
+				// Get all attributes
+				if (!isset($this->attributes)) {
+					$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
+					if (isset($items)) {
+						$this->attributes = [];
+						if (isset($items)) {
+							foreach ($items as $item => $value) {
+								if ($value == '') {
+									$this->attributes[$item] = null;
+								} else {
+									$this->attributes[$item] = String::unserialize($value);
+								}
+							}
+						}
 					}
+					return $this->attributes;
 				}
 			}
-			return @$this->attributes;
-
 		}
 	}
 
@@ -378,9 +381,6 @@ abstract class Entity
 		}
 	}
 
-
-
-
 	/**
 	 * Forget an entity attribute
 	 * @param  string $key
@@ -388,45 +388,155 @@ abstract class Entity
 	 */
 	public function forgetAttribute($key)
 	{
-		$primary = $this->store->map($this->store->attributes('primary'), true);
-		$entity = $this->store->attributes('entity');
-		$entityID = $this->$primary;
+		if ($keystoneKey = $this->attributesKeystoneKey()) {
+			// Deleting a key
+			$value = $this->attributes($key);
+			if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]) === false) return false;
 
-		// Not working on individual entity or attributes not available/enabled for this entity
-		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return;
+			$attribute = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
+			if (isset($attribute)) {
+				$attribute->delete();
 
-		// Deleting a key
-		$value = $this->attributes($key);
-		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
+				// Refresh attributes
+				$this->attributes = null;
+				return $value;
+			}
 
-		$attribute = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
-		if (isset($attribute)) {
-			$attribute->delete();
+			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]);
 		}
-
-		$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value]);
-
-		// Refresh attributes
-		unset($this->attributes);
-		$this->attributes();
-		return $value;
 	}
 
 	/**
-	 * Remove all entity attributes
-	 * @return mixed
+	 * Get this entities attribute keystone key
+	 * @return string
 	 */
-	public function truncateAttributes()
+	protected function attributesKeystoneKey()
 	{
-		// I want to loop and delete, so that all individual forget events are fired
-		unset($this->attributes);
-		$attributes = $this->attributes();
-		if (isset($attributes)) {
-			foreach ($this->attributes as $key => $value) {
-				$this->forgetAttribute($key);
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		$keystoneKey = $this->store->attributes('keystone_attributes');
+
+		if (isset($this->$primary) && isset($keystoneKey)) {
+			preg_match("'%(.*)%'", $this->store->attributes('keystone_attributes'), $matches);
+			if (count($matches) == 2) {
+				$keystoneKey = preg_replace("/$matches[0]/", $this->$matches[1], $this->store->attributes('keystone_attributes'));
+			}
+			return $keystoneKey;
+		}
+	}
+
+	/**
+	 * Get a list of all or one entities properties and optionally an single option inside that property
+	 * @param string $property = null
+	 * @param $string $option = null
+	 * @return array|null
+	 */
+	public function properties($property = null, $option = null)
+	{
+		$items = $this->store->properties();
+		if (isset($property)) {
+			// Get one property
+			if (isset($items[$property])) {
+				$property = $items[$property];
+				if (isset($option)) {
+					// Get a single option
+					return isset($property[$option]) ? $property[$option] : null;
+				} else {
+					// Get all options
+					return $property;
+				}
+			}
+		} else {
+			// Get all properties
+			$properties = [];
+			foreach ($items as $property => $options) {
+				$properties[$property] = [
+					'property' => $property,
+					'column' => isset($options['column']) ? $options['column'] : null,
+					'type' => isset($options['type']) ? $options['type'] : null,
+					'size' => isset($options['size']) ? $options['size'] : null,
+					'round' => isset($options['round']) ? $options['round'] : null,
+					'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
+					'default' => isset($options['default']) ? $options['default'] : null,
+					'trim' => isset($options['trim']) ? $options['trim'] : true,
+					'entity' => isset($options['entity']) ? $options['entity'] : null,
+					'table' => isset($options['table']) ? $options['table'] : null,
+					'filter' => isset($options['filter']) ? true : false,
+					'likable' => isset($options['likable']) ? $options['likable'] : false,
+					'save' => isset($options['save']) ? $options['save'] : true,
+				];
+			}
+			return $properties;
+		}
+	}
+
+	/**
+	 * Format each entity column according to its store attribute rules
+	 * @return void
+	 */
+	public function format() {
+		$map = $this->store->properties();
+		foreach ($map as $property => $options) {
+			$type = isset($options['type']) ? $options['type'] : null;
+			if (isset($type)) {
+				$size = isset($options['size']) ? $options['size'] : null;
+				$round = isset($options['round']) ? $options['round'] : null;
+				$nullable = isset($options['nullable']) ? $options['nullable'] : false;
+				$default = isset($options['default']) ? $options['default'] : null;
+				$trim = isset($options['trim']) ? $options['trim'] : true;
+
+				$value = $this->$property;
+				if (!$value) {
+					// Value is empty, set to proper empty value
+					switch ($type) {
+						case "string":
+							$value = $default ?: $nullable ? null : '';
+							break;
+						case "integer":
+							$value = $default ?: $nullable ? null : 0;
+							break;
+						case "decimal":
+							$value = $default ?: $nullable ? null : 0.0;
+							break;
+						case "boolean":
+							$value = $default ?: false;
+							break;
+					}
+				} else {
+
+					switch ($type) {
+						case "string":
+							if ($trim) $value = trim($value);
+							break;
+						case "integer":
+							$value = (int) $value;
+							break;
+						case "decimal":
+							if (isset($size)) {
+								// Add one to offset the decimal point in calculations
+								$options['size'] ++;
+								$size ++;
+							}
+							if (isset($round)) {
+								$value = round((float) $value, $round);
+							} else {
+								$value = (float) $value;
+							}
+							break;
+						case "boolean":
+							$value = (bool) $value;
+							break;
+					}
+
+					if (isset($size) && strlen($value) > $size) {
+						// Column size overflow
+						$this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
+						$value = substr($value, 0, $size);
+					}
+
+				}
+				$this->$property = $value;
 			}
 		}
-		return $attributes;
 	}
 
 	/**
@@ -556,15 +666,6 @@ abstract class Entity
 			$this->repository = $storeClassname;
 		}
 		return $this->repository;
-	}
-
-	/**
-	 * Get manager for entity
-	 * @return object
-	 */
-	protected function entityManager()
-	{
-		return app($this->realNamespace());
 	}
 
 	/**

@@ -14,7 +14,6 @@ return [
 				'connection' => 'fake-repository',
 				'entities' => [
 					'address',
-					'attribute',
 					'client'
 				]
 			],

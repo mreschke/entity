@@ -235,6 +235,26 @@ class Manager
 	}
 
 	/**
+	 * Get an array of all entities
+	 * @return array
+	 */
+	public function entities()
+	{
+		$entities = [];
+		$stores = $this->config('stores');
+		foreach ($stores as $store) {
+			foreach ($store as $connection) {
+				foreach ($connection['entities'] as $entity) {
+					if (!in_array($entity, $entities)) {
+						$entities[] = $entity;
+					}
+				}
+			}
+		}
+		return $entities;
+	}
+
+	/**
 	 * Get distinct entities from config
 	 * @return array
 	 */
