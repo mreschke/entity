@@ -247,81 +247,14 @@ abstract class Entity
 	 * @param  mixed $value
 	 * @return mixed
 	 */
-	public function attributesXXX_FIRST_MYSQL($key = null, $value = null)
-	{
-		if ($keystoneKey = $this->attributesKeystoneKey()) {
-			if (isset($key)) {
-				// Attribute keys are always underscore
-				$key = snake_case(str_replace("-", "_", str_slug($key)));
-
-				if (isset($value)) {
-
-					// Set a single attribute
-					$originalValue = $this->attributes($key);
-					if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]) === false) return false;
-
-					$this->keystone()->push($keystoneKey, [$key => $value]);
-
-					$this->entityManager()->attribute->create([
-						'key' => "$entity:$entityID:$key",
-						'entity' => $entity,
-						'entityID' => $entityID,
-						'index' => $key,
-						'value' => $value
-					]);
-					$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue, 'keystone' => $keystoneKey]);
-
-					// Refresh attributes
-					$this->attributes = null; $this->attributes();
-					return $this->attributes($key);
-
-				} else {
-
-					// Getting a single attribute
-					if (isset($this->attributes[$key]) && $this->attributes[$key] != "") {
-						return $this->attributes[$key];
-					} else {
-						return null;
-					}
-				}
-
-			} else {
-
-				// Get all attributes
-				if (!isset($this->attributes)) {
-					$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->get();
-					if (isset($items)) {
-						$this->attributes = [];
-						if (isset($items)) {
-							foreach ($items as $item => $value) {
-								if ($value == '') {
-									$this->attributes[$item] = null;
-								} else {
-									$this->attributes[$item] = String::unserialize($value);
-								}
-							}
-						}
-					}
-					return $this->attributes;
-				}
-			}
-		}
-	}
-
-	/**
-	 * Get or set entity attributes
-	 * @param  string $key
-	 * @param  mixed $value
-	 * @return mixed
-	 */
 	public function attributes($key = null, $value = null)
 	{
 		$primary = $this->store->map($this->store->attributes('primary'), true);
 		$entity = $this->store->attributes('entity');
 		$entityID = $this->$primary;
 
-		// Not working on individual entity or attributes not available/enabled for this entity
-		if (is_null($entityID) || !array_key_exists('attributes', $this->store->attributes('map')))	return 's';
+		// Not working on individual entity
+		if (is_null($entityID))	return null;
 
 		if (isset($key)) {
 
@@ -389,6 +322,7 @@ abstract class Entity
 	public function forgetAttribute($key)
 	{
 		if ($keystoneKey = $this->attributesKeystoneKey()) {
+			
 			// Deleting a key
 			$value = $this->attributes($key);
 			if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]) === false) return false;
@@ -666,6 +600,15 @@ abstract class Entity
 			$this->repository = $storeClassname;
 		}
 		return $this->repository;
+	}
+
+	/**
+	 * Get manager for entity
+	 * @return object
+	 */
+	protected function entityManager()
+	{
+		return app($this->realNamespace());
 	}
 
 	/**
