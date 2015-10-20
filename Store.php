@@ -422,6 +422,12 @@ abstract class Store
 		if ($isArray) {
 			return $translated;
 		} else {
+			// FIXME, why if empty return items[0]?? can't remember
+			// test later once you get proper unit tests
+			// at this point, if you entered ->where('actual_column') instead of
+			// ->where('entityColumn') it actually STILL works.  This means you can use
+			// either property or column in your wheres, which I DON'T want as this lets
+			// you bypass the entire point of an entity mappper.
 			return empty($translated) ? $items[0] : $translated[0];
 		}
 	}
