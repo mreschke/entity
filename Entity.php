@@ -19,14 +19,6 @@ abstract class Entity
 	public $repository;
 
 	/**
-	 * Get the keystone instance
-	 * @return \Mreschke\Keystone\Keystone
-	 */
-	protected function keystone() {
-		return App::make( 'Mreschke\Keystone');
-	}
-
-	/**
 	 * Create a new entity instance
 	 * @param string $storeClassname
 	 */
@@ -267,16 +259,18 @@ abstract class Entity
 				$originalValue = $this->attributes($key);
 				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
-				$attributes = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				$attributes = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
 				if (isset($attributes)) {
-					// Update attributes
+					// Update a single key inside the attributes json blob
 					$blob = json_decode($attributes->value, true);
 					$blob[$key] = $value;
 					$attributes->value = json_encode($blob);
 					$attributes->save();
+
+					
 				} else {
-					// Create attributes
-					$this->entityManager()->attribute->create([
+					// Create the initial attributes json blob with this first key
+					$this->realManager()->attribute->create([
 						'entity' => $entity,
 						'entityID' => $entityID,
 						'value' => json_encode([$key => $value])
@@ -299,12 +293,11 @@ abstract class Entity
 				}
 			}
 
-
 		} else {
 
 			// Get all attributes
 			if (!isset($this->attributes)) {
-				$items = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				$items = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
 				if (isset($items)) {
 					$this->attributes = json_decode($items->value, true);
 				}
@@ -327,7 +320,7 @@ abstract class Entity
 			$value = $this->attributes($key);
 			if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]) === false) return false;
 
-			$attribute = $this->entityManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
+			$attribute = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
 			if (isset($attribute)) {
 				$attribute->delete();
 
@@ -603,10 +596,20 @@ abstract class Entity
 	}
 
 	/**
+	 * Get the repository manager
+	 * @return object
+	 */
+	protected function manager()
+	{
+		// Return the manager from Laravels IoC Singleton
+		$tmp = explode('\\', get_class($this));
+		return app($tmp[0].'\\'.$tmp[1]);
+	}
+	/**
 	 * Get manager for entity
 	 * @return object
 	 */
-	protected function entityManager()
+	protected function realManager()
 	{
 		return app($this->realNamespace());
 	}

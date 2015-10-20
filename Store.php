@@ -313,6 +313,24 @@ abstract class Store
 	}
 
 	/**
+	 * Merge entity attributes (NOT store attributes) subentity with entity
+	 * @param  \Illuminate\Support\Collection $clients
+	 */
+	protected function mergeAttributes($clients)
+	{
+		$entity = $this->attributes('entity');
+		$attributes = $this->entityManager('client')->attribute->where('entity', $entity)->where('entityID', 'in', $clients->lists('id')->all())->get();
+
+		$ssoDealers = \Sso::dealer()->where("dp_dlr_id in ($ids)")->all()->get()->keyBy('dp_dlr_id');
+		foreach ($clients as $client) {
+			if (isset($ssoDealers[$client->id])) {
+				// Use existing Iam\Client apps() logic, but pass in this $ssoDealer to avoid another SSO hit per dealer
+				$clients[$client->id]->apps($ssoDealers[$client->id]);
+			}
+		}
+	}
+
+	/**
 	 * Translate entity property names to store column names (or visa versa)
 	 * @param  array|string $items
 	 * @param  boolean $reverse = false reverse the translation
@@ -730,7 +748,7 @@ abstract class Store
 	 */
 	protected function entityManager($entity)
 	{
-		// fixme, shoudl try $this->manager first, then app make if needed
+		// Try this realNamespace first, in case of inheritence and same entity like vfi/iam clients
 		$manager = app($this->realNamespace());
 		if (is_null($manager->$entity)) {
 			// Entity not found in realNamespace, try inherited namespace
