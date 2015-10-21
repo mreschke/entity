@@ -104,18 +104,12 @@ abstract class Entity
 	/**
 	 * Find all entities matching this attribute
 	 * @param  string  $column
-	 * @param  string  $operator
 	 * @param  mixed   $value
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function whereAttribute($column, $operator = null, $value = null)
+	public function whereAttribute($column, $value = null)
 	{
-		if (func_num_args() >= 2) {
-			if (func_num_args() == 2) {
-				list($value, $operator) = array($operator, '=');
-			}
-			$this->store->whereAttribute($column, $operator, $value);
-		}
+		$this->store->whereAttribute($column, $value);
 		return $this;
 	}
 
@@ -243,10 +237,10 @@ abstract class Entity
 	{
 		$primary = $this->store->map($this->store->attributes('primary'), true);
 		$entity = $this->store->attributes('entity');
-		$entityID = $this->$primary;
+		$entityKey = $this->$primary;
 
 		// Not working on individual entity
-		if (is_null($entityID))	return null;
+		if (is_null($entityKey) || is_null($this->store->properties('attributes'))) return null;
 
 		if (isset($key)) {
 
@@ -259,7 +253,7 @@ abstract class Entity
 				$originalValue = $this->attributes($key);
 				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
-				$attributes = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				$attributes = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
 				if (isset($attributes)) {
 					// Update a single key inside the attributes json blob
 					$blob = json_decode($attributes->value, true);
@@ -267,15 +261,23 @@ abstract class Entity
 					$attributes->value = json_encode($blob);
 					$attributes->save();
 
-					
 				} else {
 					// Create the initial attributes json blob with this first key
-					$this->realManager()->attribute->create([
+					$this->manager->attribute->create([
 						'entity' => $entity,
-						'entityID' => $entityID,
+						'entityKey' => $entityKey,
 						'value' => json_encode([$key => $value])
 					]);
 				}
+
+				// Update index (will smart insert/update because key is unique)
+				$this->manager->attributeIndex->create([
+					'key' => "$entity-$entityKey-$key",
+					'entity' => $entity,
+					'entityKey' => $entityKey,
+					'index' => $key,
+					'value' => $value
+				]);
 
 				$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue]);
 
@@ -297,7 +299,8 @@ abstract class Entity
 
 			// Get all attributes
 			if (!isset($this->attributes)) {
-				$items = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->first();
+				$this->attributes = null;
+				$items = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
 				if (isset($items)) {
 					$this->attributes = json_decode($items->value, true);
 				}
@@ -314,41 +317,37 @@ abstract class Entity
 	 */
 	public function forgetAttribute($key)
 	{
-		if ($keystoneKey = $this->attributesKeystoneKey()) {
-			
-			// Deleting a key
-			$value = $this->attributes($key);
-			if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]) === false) return false;
 
-			$attribute = $this->realManager()->attribute->where('entity', $entity)->where('entityID', $entityID)->where('index', $key)->first();
-			if (isset($attribute)) {
-				$attribute->delete();
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		$entity = $this->store->attributes('entity');
+		$entityKey = $this->$primary;
 
-				// Refresh attributes
-				$this->attributes = null;
-				return $value;
+		// Deleting a key
+		$value = $this->attributes($key);
+		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
+
+		$attribute = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
+
+
+		dd('fixme');
+		if (isset($attribute)) {
+			dd('xx');
+			// Delete attribute
+			$attribute->delete();
+
+			// Delete attribute index
+			$index = $this->manager->attributeIndex->where('entity', $entity)->where('entityKey', $entityKey)->where('index', $key)->first();
+			if (isset($index)) {
+				$index->delete();
 			}
 
 			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]);
-		}
-	}
 
-	/**
-	 * Get this entities attribute keystone key
-	 * @return string
-	 */
-	protected function attributesKeystoneKey()
-	{
-		$primary = $this->store->map($this->store->attributes('primary'), true);
-		$keystoneKey = $this->store->attributes('keystone_attributes');
-
-		if (isset($this->$primary) && isset($keystoneKey)) {
-			preg_match("'%(.*)%'", $this->store->attributes('keystone_attributes'), $matches);
-			if (count($matches) == 2) {
-				$keystoneKey = preg_replace("/$matches[0]/", $this->$matches[1], $this->store->attributes('keystone_attributes'));
-			}
-			return $keystoneKey;
+			// Refresh attributes
+			$this->attributes = null;
+			return $value;
 		}
+
 	}
 
 	/**
@@ -580,7 +579,7 @@ abstract class Entity
 	 */
 	protected function store()
 	{
-		return $this->manager->getStoreInstance($this->repository);
+		return $this->manager(false)->getStoreInstance($this->repository);
 	}
 
 	/**
@@ -596,22 +595,23 @@ abstract class Entity
 	}
 
 	/**
-	 * Get the repository manager
-	 * @return object
-	 */
-	protected function manager()
-	{
-		// Return the manager from Laravels IoC Singleton
-		$tmp = explode('\\', get_class($this));
-		return app($tmp[0].'\\'.$tmp[1]);
-	}
-	/**
 	 * Get manager for entity
+	 * @param boolean $inherited = true, get the inherited namespace if this entity inherits from another
 	 * @return object
 	 */
-	protected function realManager()
+	protected function manager($inherited = true)
 	{
-		return app($this->realNamespace());
+		if ($inherited) {
+			// Get the inherited manager.
+			// Example: if using $vfi->client, we actually get Dynatron/Iam here, NOT Dynatron/Vfi becuase Vfi inherits from Iam
+			return app($this->realNamespace());
+		} else {
+			// Get the first non-inherited manager.
+			// Example: if using $vfi->client, we actually get Dynatron/Vfi here, even though Vfi inherts from Iam, we want Vfi
+			$tmp = explode('\\', get_class($this));
+			return app($tmp[0].'\\'.$tmp[1]);
+		}
+		
 	}
 
 	/**

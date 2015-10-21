@@ -95,7 +95,7 @@ abstract class DbStore extends Store implements StoreInterface
 	 * @param  mixed   $value
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function whereAttribute($column, $operator = null, $value = null)
+	public function whereAttribute_OLD_FULL_TEXT($column, $operator = null, $value = null)
 	{
 		// Only allow operators that ALL stores can utilize (no like, between...)
 		$operators = ['=', 'null'];

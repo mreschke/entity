@@ -313,19 +313,50 @@ abstract class Store
 	}
 
 	/**
-	 * Merge entity attributes (NOT store attributes) subentity with entity
-	 * @param  \Illuminate\Support\Collection $clients
+	 * Add a where attributes clause to the query
+	 * @param  string  $column
+	 * @param  mixed   $value
+	 * @return \Illuminate\Support\Collection
 	 */
-	protected function mergeAttributes($clients)
+	public function whereAttribute($column, $value = null)
 	{
 		$entity = $this->attributes('entity');
-		$attributes = $this->entityManager('client')->attribute->where('entity', $entity)->where('entityID', 'in', $clients->lists('id')->all())->get();
+		$primary = $this->map($this->attributes('primary'), true);
 
-		$ssoDealers = \Sso::dealer()->where("dp_dlr_id in ($ids)")->all()->get()->keyBy('dp_dlr_id');
-		foreach ($clients as $client) {
-			if (isset($ssoDealers[$client->id])) {
-				// Use existing Iam\Client apps() logic, but pass in this $ssoDealer to avoid another SSO hit per dealer
-				$clients[$client->id]->apps($ssoDealers[$client->id]);
+		// Query attribute index
+		if (isset($value)) {
+			// Query by actual attribute value
+			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column)->where('value', $value);
+		} else {
+			// Query if attribute exists at all
+			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column);	
+		}
+		
+		// Get array of matching entityKeys
+		$index = $index->get();
+		if (isset($index)) {
+			// Add where to entity query matching these found entityKeys
+			$this->where($primary, 'in', $index->lists('entityKey'));
+		}
+		return $this;
+	}
+
+	/**
+	 * Merge entity attributes (not store attributes) subentity with client
+	 * @param  \Illuminate\Support\Collection $entities
+	 */
+	protected function mergeAttributes($entities)
+	{
+		$primary = $this->map($this->attributes('primary'), true);
+		$entity = $this->attributes('entity');
+
+		// Attributes not available/enabled for this entity if store relationship not defined
+		if (is_null($this->properties('attributes'))) return;
+
+		$attributes = $this->entityManager($entity)->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->lists($primary)->all())->get();
+		if (isset($attributes)) {
+			foreach ($attributes as $attribute) {
+				$entities[$attribute->entityKey]->attributes = json_decode($attribute->value, true);
 			}
 		}
 	}
