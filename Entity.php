@@ -326,26 +326,31 @@ abstract class Entity
 		$value = $this->attributes($key);
 		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
 
-		$attribute = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
-
-
-		dd('fixme');
-		if (isset($attribute)) {
-			dd('xx');
-			// Delete attribute
-			$attribute->delete();
-
+		$attributes = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
+		if (isset($attributes)) {
+			$blob = json_decode($attributes->value, true);
+			unset($blob[$key]);
+			if (empty($blog)) {
+				// Attributes are empty now, delete entire row
+				$attributes->delete();
+			} else {
+				// Delete this one value from attributes
+				$attributes->value = json_encode($blob);	
+				$attributes->save();
+			}
+			
 			// Delete attribute index
 			$index = $this->manager->attributeIndex->where('entity', $entity)->where('entityKey', $entityKey)->where('index', $key)->first();
 			if (isset($index)) {
 				$index->delete();
 			}
 
-			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value, 'keystone' => $keystoneKey]);
+			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value]);
 
 			// Refresh attributes
-			$this->attributes = null;
+			unset($this->attributes); $this->attributes();
 			return $value;
+
 		}
 
 	}

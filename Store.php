@@ -337,6 +337,9 @@ abstract class Store
 		if (isset($index)) {
 			// Add where to entity query matching these found entityKeys
 			$this->where($primary, 'in', $index->lists('entityKey'));
+		} else {
+			// Want to return nothing, no attribute match, no entity return
+			$this->where($primary, null);
 		}
 		return $this;
 	}
