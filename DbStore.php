@@ -89,69 +89,6 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
-	 * Add a where clause to the query
-	 * @param  string  $column
-	 * @param  string  $operator
-	 * @param  mixed   $value
-	 * @return \Illuminate\Support\Collection
-	 */
-	public function whereAttribute_OLD_FULL_TEXT($column, $operator = null, $value = null)
-	{
-		// Only allow operators that ALL stores can utilize (no like, between...)
-		$operators = ['=', 'null'];
-		if (func_num_args() >= 2) {
-			if (func_num_args() == 2) {
-				list($value, $operator) = array($operator, '=');
-			}
-			if (!in_array(strtolower($operator), $operators)) $operator = "=";
-
-
-			$entity = $this->attributes('entity');
-			$primary = $this->map($this->attributes('primary'), true);
-
-			if ($operator == 'null') {
-				$null = $value;
-				$value = $column;
-			}
-
-			// Fulltext search on attributes json blob
-			// This will get us close, but not an exact search
-			if ($operator == 'null' && $null) {
-				$fullTextResults = $this->entityManager($entity)->attribute->all();
-			} else {
-				$attributeStore = $this->entityManager($entity)->attribute->store;
-				$fullTextResults = $attributeStore->transaction(function() use ($value, $attributeStore) {
-					return $attributeStore->newQuery()
-						->whereRaw("MATCH(value) AGAINST(? IN BOOLEAN MODE)", [$value])
-						->get();
-				});
-			}
-
-			// Now loop fulltext results and narrow by exact key/value match
-			$entityIDs = [];
-			foreach ($fullTextResults as $result) {
-				$attributes = json_decode($result->value, true);
-				if ($operator == 'null') {
-					if (!isset($attributes[$value]) == $null) {
-						$entityIDs[] = $result->entityID;	
-					}
-				} else {
-
-					if ($attributes[$column] == $value) {
-						$entityIDs[] = $result->entityID;
-					}
-				}
-
-			}
-
-			if (count($entityIDs) > 0) {
-				$this->where($primary, 'in', $entityIDs);
-			}
-		}
-		return $this;
-	}
-
-	/**
 	 * Start a new query builder
 	 * @return \Illuminate\Database\Query\Builder
 	 */
@@ -222,6 +159,9 @@ abstract class DbStore extends Store implements StoreInterface
 			}
 		}
 		$query->select($selects ?: ['*']);
+
+		// Add distinct
+		if ($this->distinct) $query->distinct();
 	}
 
 	/**

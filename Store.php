@@ -36,6 +36,12 @@ abstract class Store
 	protected $select;
 
 	/**
+	 * The distinct statement
+	 * @var boolean
+	 */
+	protected $distinct;
+
+	/**
 	 * The join statements
 	 * @var array
 	 */
@@ -108,6 +114,17 @@ abstract class Store
 	{
 		$columns = is_array($columns) ? $columns : func_get_args();
 		$this->select = $this->map($columns);
+		return $this;
+	}
+
+	/**
+	 * Set distinct statement
+	 * @param  boolean $distinct = true
+	 * @return $this
+	 */
+	public function distinct($distinct = true)
+	{
+		$this->distinct = $distinct;
 		return $this;
 	}
 

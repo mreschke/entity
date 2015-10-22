@@ -55,6 +55,17 @@ abstract class Entity
 	}
 
 	/**
+	 * Set distinct statement
+	 * @param  boolean $distinct = true
+	 * @return $this
+	 */
+	public function distinct($distinct = true)
+	{
+		$this->store->distinct($distinct);
+		return $this;
+	}
+
+	/**
 	 * Select columns from a collection (post query)
 	 * @param  \Illuminate\Support\Collection $items
 	 * @param  array $select must be entity columns, not store columns so reverse map
