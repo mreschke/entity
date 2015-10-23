@@ -346,10 +346,10 @@ abstract class Entity
 				$attributes->delete();
 			} else {
 				// Delete this one value from attributes
-				$attributes->value = json_encode($blob);	
+				$attributes->value = json_encode($blob);
 				$attributes->save();
 			}
-			
+
 			// Delete attribute index
 			$index = $this->manager->attributeIndex->where('entity', $entity)->where('entityKey', $entityKey)->where('index', $key)->first();
 			if (isset($index)) {
@@ -420,15 +420,22 @@ abstract class Entity
 		foreach ($map as $property => $options) {
 			$type = isset($options['type']) ? $options['type'] : null;
 			if (isset($type)) {
+
+				// Get options and defaults
 				$size = isset($options['size']) ? $options['size'] : null;
 				$round = isset($options['round']) ? $options['round'] : null;
 				$nullable = isset($options['nullable']) ? $options['nullable'] : false;
 				$default = isset($options['default']) ? $options['default'] : null;
 				$trim = isset($options['trim']) ? $options['trim'] : true;
+				$ucwords = isset($options['ucwords']) ? $options['ucwords'] : false;
+				$lowercase = isset($options['lowercase']) ? $options['lowercase'] : false;
+				$uppercase = isset($options['uppercase']) ? $options['uppercase'] : false;
+				$multiline = isset($options['multiline']) ? $options['multiline'] : false;
+				$utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
 
 				$value = $this->$property;
 				if (!$value) {
-					// Value is empty, set to proper empty value
+					// Value is empty, set to proper empty values
 					switch ($type) {
 						case "string":
 							$value = $default ?: $nullable ? null : '';
@@ -443,11 +450,31 @@ abstract class Entity
 							$value = $default ?: false;
 							break;
 					}
+
 				} else {
+
+					// If not multiline, strip carriage returns
+					if (!$multiline) {
+						$value = strtr($value, ["\r\n"=>" ", "\n"=>" ", "\r"=>" "]);
+					}
+
+					// Don't allow UTF-8
+					if (!$utf8) {
+						$encoding = mb_detect_encoding($value);
+						if ($encoding != "ASCII") {
+							#$value = utf8_encode($value);
+							$value = String::toAscii($value);
+						}
+					}
+
+					// Trim if true (default=true)
+					if ($trim) $value = trim($value);
 
 					switch ($type) {
 						case "string":
-							if ($trim) $value = trim($value);
+							if ($lowercase) $value = strtolower($value);
+							if ($uppercase) $value = strtoupper($value);
+							if ($ucwords) $value = ucwords(strtolower($value));
 							break;
 						case "integer":
 							$value = (int) $value;
@@ -627,7 +654,7 @@ abstract class Entity
 			$tmp = explode('\\', get_class($this));
 			return app($tmp[0].'\\'.$tmp[1]);
 		}
-		
+
 	}
 
 	/**

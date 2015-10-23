@@ -11,15 +11,6 @@ use Mreschke\Repository\Entity;
  */
 abstract class FakeEntity extends Entity
 {
-	/**
-	 * Get the repository manager
-	 * @return object
-	 */
-	protected function manager()
-	{
-		// Return the manager from Laravels IoC Singleton
-		return App::make('Mreschke\Repository\Fake');
-	}
 
 	/**
 	 * Get the repository manager
