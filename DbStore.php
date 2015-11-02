@@ -52,6 +52,7 @@ abstract class DbStore extends Store implements StoreInterface
 				$results = $this->expandCollection(collect($results));
 
 				// Key by primary
+				// This does happen in transaction(), but expandCollection removes the keyBy
 				return $this->keyByPrimary($results);
 			} else {
 				throw new Exception("Must specify a custom select when using joins");

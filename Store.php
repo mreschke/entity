@@ -180,10 +180,10 @@ abstract class Store
 	/**
 	 * Set the orderBy column and direction for the query
 	 * @param  string $column
-	 * @param  string $direction
+	 * @param  string $direction = 'asc'
 	 * @return $this
 	 */
-	public function orderBy($column, $direction)
+	public function orderBy($column, $direction = 'asc')
 	{
 		$this->orderBy = [
 			'column' => $this->map($column),
@@ -346,9 +346,9 @@ abstract class Store
 			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column)->where('value', $value);
 		} else {
 			// Query if attribute exists at all
-			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column);	
+			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column);
 		}
-		
+
 		// Get array of matching entityKeys
 		$index = $index->get();
 		if (isset($index)) {
@@ -698,17 +698,21 @@ abstract class Store
 	}
 
 	/**
-	 * Key entities collection by primary if set, else no keyby
+	 * Key entities collection by primary or override key_by attribute if set, else no keyby
 	 * @param  array $entities
 	 * @return \Illuminate\Support\Collection|null
 	 */
 	protected function keyByPrimary($entities)
 	{
 		if (count($entities) > 0) {
-			$primary = $this->map($this->attributes('primary'), true);
-			if (property_exists($entities[0], $primary)) {
+			$keyBy = $this->attributes('key_by');
+			if (!isset($keyBy)) {
+				// Custom key_by not set, key by primary
+				$keyBy = $this->map($this->attributes('primary'), true);
+			}
+			if (property_exists($entities[0], $keyBy)) {
 				// Re-key assoc array by primary
-				return collect($entities)->keyBy($primary);
+				return collect($entities)->keyBy($keyBy);
 			} else {
 				return collect($entities);
 			}
@@ -797,8 +801,10 @@ abstract class Store
 	 * @param  string $entity
 	 * @return object
 	 */
-	protected function entityManager($entity)
+	protected function entityManager($entity = null)
 	{
+		if (!isset($entity)) $entity = $this->attributes('entity');
+
 		// Try this realNamespace first, in case of inheritence and same entity like vfi/iam clients
 		$manager = app($this->realNamespace());
 		if (is_null($manager->$entity)) {
