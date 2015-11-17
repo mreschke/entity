@@ -328,7 +328,6 @@ abstract class Entity
 	 */
 	public function forgetAttribute($key)
 	{
-
 		$primary = $this->store->map($this->store->attributes('primary'), true);
 		$entity = $this->store->attributes('entity');
 		$entityKey = $this->$primary;
@@ -341,7 +340,7 @@ abstract class Entity
 		if (isset($attributes)) {
 			$blob = json_decode($attributes->value, true);
 			unset($blob[$key]);
-			if (empty($blog)) {
+			if (empty($blob)) {
 				// Attributes are empty now, delete entire row
 				$attributes->delete();
 			} else {
