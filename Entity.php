@@ -621,7 +621,16 @@ abstract class Entity
 	 */
 	protected function store()
 	{
-		return $this->manager(false)->getStoreInstance($this->repository);
+		$store = $this->manager(false)->getStoreInstance($this->repository);
+		if (is_null($store)) {
+			// Manager has never actually been loaded as a singleton.
+			// This happens if you store an entity as a session, then try to do work
+			// on that stored entity before the manager singleton has ever loaded
+			$entity = lcfirst(studly_case(last(explode('\\', get_class($this)))));
+			$this->manager(false)->$entity;
+			$store = $this->manager(false)->getStoreInstance($this->repository);
+		}
+		return $store;
 	}
 
 	/**
