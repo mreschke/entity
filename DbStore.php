@@ -78,7 +78,9 @@ abstract class DbStore extends Store implements StoreInterface
 	public function count()
 	{
 		try {
-			$filteredRecords = $this->newQuery()->count();
+			$filteredRecords = $this->transaction(function() {
+				return $this->newQuery()->count();
+			}, false);
 		} catch (Exception $e) {
 			// If error, means we are filtering on a subentity column of a ->with()...which will break counts and is not supported
 			// This means you cannot have any pager counts if filtering on subentity using ->with().  Either don't allow, or revert to primitive pager
