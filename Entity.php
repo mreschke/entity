@@ -231,11 +231,12 @@ abstract class Entity
 
 	/**
 	 * Get a count of query records (null if error counting)
+	 * @param boolean $isTransaction = true when true, this is a terminating function (will clear query builder), if false it will not clear query builder
 	 * @return integer|null
 	 */
-	public function count()
+	public function count($isTransaction = true)
 	{
-		return $this->store->count();
+		return $this->store->count($isTransaction);
 	}
 
 	/**

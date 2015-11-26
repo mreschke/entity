@@ -73,14 +73,21 @@ abstract class DbStore extends Store implements StoreInterface
 
 	/**
 	 * Get a count of query records (null if error counting)
+	 * @param boolean $isTransaction = true when true, this is a terminating function (will clear query builder), if false it will not clear query builder
 	 * @return integer|null
 	 */
-	public function count()
+	public function count($isTransaction = true)
 	{
 		try {
-			$filteredRecords = $this->transaction(function() {
+			if ($isTransaction) {
+				// Clear query builder after running counts (a terminating ->count() method like ->get())
+				$filteredRecords = $this->transaction(function() {
+					return $this->newQuery()->count();
+				}, false);
+			} else {
+				// Do NOT clear query builder after running counts
 				return $this->newQuery()->count();
-			}, false);
+			}
 		} catch (Exception $e) {
 			// If error, means we are filtering on a subentity column of a ->with()...which will break counts and is not supported
 			// This means you cannot have any pager counts if filtering on subentity using ->with().  Either don't allow, or revert to primitive pager
