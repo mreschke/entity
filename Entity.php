@@ -2,7 +2,7 @@
 
 use App;
 use Event;
-use Mreschke\Helpers\String;
+use Mreschke\Helpers\Str;
 
 /**
  * Entity
@@ -463,7 +463,7 @@ abstract class Entity
 						$encoding = mb_detect_encoding($value);
 						if ($encoding != "ASCII") {
 							#$value = utf8_encode($value);
-							$value = String::toAscii($value);
+							$value = Str::toAscii($value);
 						}
 					}
 

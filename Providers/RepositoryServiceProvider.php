@@ -49,7 +49,7 @@ class RepositoryServiceProvider extends ServiceProvider {
 
 	/**
 	 * If running in test environment, append test configs and singletons
-	 * 
+	 *
 	 * @return void
 	 */
 	public function setupTestingEnvironment()
