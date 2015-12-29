@@ -32,8 +32,10 @@ abstract class MongoStore extends Store implements StoreInterface
 		$this->init();
 
 		// Ensure collection indexes
-		foreach ($this->attributes('indexes') as $index) {
-			$this->table()->ensureIndex($index['key'], $index['options']);
+		if (isset($this->attributes['indexes'])) {
+			foreach ($this->attributes('indexes') as $index) {
+				$this->table()->ensureIndex($index['key'], $index['options']);
+			}
 		}
 	}
 

@@ -9,6 +9,9 @@ class FakeAddressSeeder extends Seeder
 		$fake = App::make('Mreschke\Repository\Fake');
 		$stores = Config::get('mreschke.repository.fake.stores');
 
+		$x = $fake->address;
+		$x->truncate();
+
 		foreach ($stores as $storeKey => $value) {
 			$store = $fake->store($storeKey)->address;
 

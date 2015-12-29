@@ -1,7 +1,6 @@
 <?php namespace Mreschke\Repository\Fake\Stores\Db;
 
 use Mreschke\Repository\DbStore;
-use Mreschke\Repository\Fake\Stores\AddressStoreInterface;
 
 /**
  * Fake Address Store
@@ -9,7 +8,7 @@ use Mreschke\Repository\Fake\Stores\AddressStoreInterface;
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-class AddressStore extends DbStore implements AddressStoreInterface
+class AddressStore extends DbStore
 {
 	/**
 	 * Initialize Store

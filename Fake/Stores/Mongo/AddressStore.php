@@ -1,7 +1,6 @@
 <?php namespace Mreschke\Repository\Fake\Stores\Mongo;
 
 use Mreschke\Repository\MongoStore;
-use Mreschke\Repository\Fake\Stores\AddressStoreInterface;
 
 /**
  * Fake Address Store
@@ -9,7 +8,7 @@ use Mreschke\Repository\Fake\Stores\AddressStoreInterface;
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-class AddressStore extends MongoStore implements AddressStoreInterface
+class AddressStore extends MongoStore
 {
 	/**
 	 * Initialize Store

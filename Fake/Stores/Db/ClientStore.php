@@ -1,7 +1,6 @@
 <?php namespace Mreschke\Repository\Fake\Stores\Db;
 
 use Mreschke\Repository\DbStore;
-use Mreschke\Repository\Fake\Stores\ClientStoreInterface;
 
 /**
  * Fake Client Store
@@ -9,7 +8,7 @@ use Mreschke\Repository\Fake\Stores\ClientStoreInterface;
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-class ClientStore extends DbStore implements ClientStoreInterface
+class ClientStore extends DbStore
 {
 	/**
 	 * The showDisabled filter
@@ -128,7 +127,7 @@ class ClientStore extends DbStore implements ClientStoreInterface
 	 */
 	protected function mergeAddress($clients)
 	{
-		$addresses = app($this->realNamespace())->address->where('id', 'in', $clients->lists('addressID'))->get();
+		$addresses = $this->manager->address->where('id', 'in', $clients->lists('addressID'))->get();
 		foreach ($clients as $client) {
 			$client->address = isset($addresses[$client->addressID]) ? $addresses[$client->addressID]: null;
 		}
@@ -140,7 +139,7 @@ class ClientStore extends DbStore implements ClientStoreInterface
 	 */
 	protected function mergeGroups($clients)
 	{
-		$groups = app($this->realNamespace())->group->byClients($clients->lists('id'));
+		$groups = $this->manager->group->byClients($clients->lists('id'));
 		foreach ($groups as $clientID => $group) {
 			$clients[$clientID]->groups = collect($group);
 		}

@@ -1,6 +1,6 @@
-<?php namespace Mreschke\Repository\Fake2\Stores\Db;
+<?php namespace Mreschke\Repository\Fake2\Stores\Mongo;
 
-use Mreschke\Repository\DbStore;
+use Mreschke\Repository\MongoStore;
 
 /**
  * Fake2 Product Store
@@ -8,7 +8,7 @@ use Mreschke\Repository\DbStore;
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-class ProductStore extends DbStore
+class ProductStore extends MongoStore
 {
 	/**
 	 * Initialize Store
@@ -18,10 +18,10 @@ class ProductStore extends DbStore
 		$this->attributes = [
 			'entity' => 'product',
 			'table' => 'ProductTable',
-			'primary' => 'ID',
+			'primary' => '_id',
 			'increments' => true,
 			'map' => [
-				'id' => ['column' => 'ID'],
+				'id' => ['column' => '_id'],
 				'name' => ['column' => 'Name'],
 				'price' => ['column' => 'Price'],
 				'disabled' => ['column' => 'Disabled', 'filter' => function($store) {

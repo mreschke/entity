@@ -11,33 +11,25 @@ use Mreschke\Repository\Fake\Client as FakeClient;
  */
 class Client extends FakeClient
 {
-	/**
-	 * Get the repository manager
-	 * @return object
-	 */
-	protected function manager()
-	{
-		// Return the manager from Laravels IoC Singleton
-		return App::make('Mreschke\Repository\Fake2');
-	}
 
 	/**
-	 * Alias to manager
-	 * @return object
+	 * Get the fake2 repository manager
+	 * @return \Mreschke\Repository\Fake2\Fake2
 	 */
 	protected function fake2()
 	{
-		return $this->manager();
+		//Non inherited manager, which is fake2
+		return $this->manager($inherited = false);
 	}
 
 	/**
-	 * Get the Fake repository manager
-	 * @return object
+	 * Get the fake repository manager
+	 * @return \Mreschke\Repository\Fake\Fake
 	 */
 	protected function fake()
 	{
-		// We use the Fake API here in Fake2 Client since Fake2 Client extends Fake Client
-		return App::make('Mreschke\Repository\Fake');
+		// Inherited manager, which is fake
+		return $this->manager();
 	}
 
 	/**

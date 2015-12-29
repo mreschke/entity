@@ -9,14 +9,33 @@ class AAAPlayTest extends TestCase
 	{
 		$this->fake = $this->app->make('Mreschke\Repository\Fake');
 		$this->fake2 = $this->app->make('Mreschke\Repository\Fake2');
-		$this->iam = $this->app->make('Dynatron\Iam');
-		$this->vfi = $this->app->make('Dynatron\Vfi');
 	}
 
 	protected function play()
 	{
-		$clients = $this->fake->client->first();
-		dd($clients);
+
+		$x = $this->fake2->client;
+		dump(get_class($x->store->manager)); #actual non-inherited
+		dump(get_class($x->store->manager()));
+
+
+
+
+
+		#$q1 = $this->fake->client->where('x', 'y');
+		#dump($q1->store);
+
+		#$q2 = $this->fake->client->where('a', 'b');
+		#dd($q2->store);
+
+
+		dd('done');
+
+
+
+
+
+
 	}
 
 	protected function playDynatron()

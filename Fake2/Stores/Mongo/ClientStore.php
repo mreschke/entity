@@ -1,6 +1,6 @@
-<?php namespace Mreschke\Repository\Fake2\Stores\Db;
+<?php namespace Mreschke\Repository\Fake2\Stores\Mongo;
 
-use Mreschke\Repository\Fake\Stores\Db\ClientStore as FakeClientStore;
+use Mreschke\Repository\Fake\Stores\Mongo\ClientStore as FakeClientStore;
 
 /**
  * Fake2 Client Store extends Fake Client Store
@@ -16,11 +16,6 @@ class ClientStore extends FakeClientStore
 	 */
 	protected function init() {
 		parent::init();
-		#$this->attributes['map']['feeds'] = [
-		#	'entity' => 'feed', 'table' => 'feeds'
-		#];
-		#$this->attributes['map']['feeds'] = ['table' => 'feeds'];
-		#$this->attributes['map']['clientFeed'] = ['table' => 'client_feeds'];
 	}
 
 	/**

@@ -1,6 +1,6 @@
-<?php namespace Mreschke\Repository\Fake2\Stores\Db;
+<?php namespace Mreschke\Repository\Fake2\Stores\Mongo;
 
-use Mreschke\Repository\DbStore;
+use Mreschke\Repository\MongoStore;
 
 /**
  * Fake2 Client Info Store
@@ -8,7 +8,7 @@ use Mreschke\Repository\DbStore;
  * @license http://mreschke.com/license/mit
  * @author Matthew Reschke <mail@mreschke.com>
  */
-class ClientInfoStore extends DbStore
+class ClientInfoStore extends MongoStore
 {
 	/**
 	 * Initialize Store
@@ -20,6 +20,9 @@ class ClientInfoStore extends DbStore
 			'table' => 'ClientInfoTable',
 			'primary' => 'ClientID',
 			'increments' => false,
+			'indexes' => [
+				['key' => 'clientID', 'options' => ['unique' => false]]
+			],
 			'map' => [
 				'clientID' => ['column' => 'ClientID'],
 				'region' => ['column' => 'Region'],

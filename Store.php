@@ -15,7 +15,7 @@ abstract class Store
 	 * The repository manager
 	 * @var object
 	 */
-	protected $manager;
+	public $manager;
 
 	/**
 	 * The repository store key
@@ -343,10 +343,10 @@ abstract class Store
 		// Query attribute index
 		if (isset($value)) {
 			// Query by actual attribute value
-			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column)->where('value', $value);
+			$index = $this->manager()->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column)->where('value', $value);
 		} else {
 			// Query if attribute exists at all
-			$index = $this->entityManager($entity)->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column);
+			$index = $this->manager()->attributeIndex->select('entityKey')->where('entity', $entity)->where('index', $column);
 		}
 
 		// Get array of matching entityKeys
@@ -373,7 +373,7 @@ abstract class Store
 		// Attributes not available/enabled for this entity if store relationship not defined
 		if (is_null($this->properties('attributes'))) return;
 
-		$attributes = $this->entityManager($entity)->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->lists($primary)->all())->get();
+		$attributes = $this->manager()->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->lists($primary)->all())->get();
 		if (isset($attributes)) {
 			foreach ($attributes as $attribute) {
 				$entities[$attribute->entityKey]->attributes = json_decode($attribute->value, true);
@@ -416,7 +416,7 @@ abstract class Store
 								$entity = $options['entity'];
 							}
 						}
-						$manager = $this->entityManager($entity);
+						$manager = $this->manager($entity);
 						$thisMap = $manager->$entity->store->attributes('map');
 						$table = $manager->$entity->store->attributes('table');
 					}
@@ -463,7 +463,7 @@ abstract class Store
 								}
 							}
 						}
-						$manager = $this->entityManager($entity);
+						$manager = $this->manager($entity);
 						$thisMap = $manager->$entity->store->attributes('map');
 					} else {
 						// From same entity, reset table
@@ -798,24 +798,38 @@ abstract class Store
 
 	/**
 	 * Get manager for entity
-	 * @param  string $entity
+	 * @param string $entity attempt to detect inherited properly based on entity location
+	 * @param boolean $inherited = true, get the inherited namespace if this entity inherits from another
 	 * @return object
 	 */
-	protected function entityManager($entity = null)
+	protected function manager($entity = null, $inherited = true)
 	{
 		if (!isset($entity)) $entity = $this->attributes('entity');
 
-		// Try this realNamespace first, in case of inheritence and same entity like vfi/iam clients
-		$manager = app($this->realNamespace());
-		if (is_null($manager->$entity)) {
-			// Entity not found in realNamespace, try inherited namespace
-			$manager = app($this->manager->namespace);
+		if ($inherited) {
+			// Get inherited (if applies) manager
+			$manager = app($this->realNamespace());
 			if (is_null($manager->$entity)) {
-				// Entity not found
-				return null;
+				// Entity not found in realNamespace, try inherited namespace
+				$manager = app($this->manager->namespace);
+				if (is_null($manager->$entity)) {
+					// Entity not found
+					return null;
+				}
 			}
+			return $manager;
+		} else {
+			// Get non-inherited manager.   You can also use ->manager property
+			return $this->manager;
 		}
-		return $manager;
+	}
+
+	/**
+	 * Legacy alias to manager()
+	 */
+	protected function entityManagerX($entity = null)
+	{
+		return $this->manager($entity);
 	}
 
 	/**
@@ -836,13 +850,13 @@ abstract class Store
 		$class = get_class($this);
 		$parent = get_parent_class($this);
 
-		if (str_contains($parent, "\\Repository\\")) {
+		if (preg_match("/Repository\\\\[A-Za-z]*Store/", $parent)) {
 			// Store is not inherited from another namespace
 			$namespace = $this->manager->namespace;
 		} else {
 			// Store is inherited from another namespace
 			$tmp = explode('\\', $parent);
-			$namespace = $tmp[0].'\\'.$tmp[1];
+			$namespace = implode('\\', array_slice($tmp, 0, count($tmp)-3));
 		}
 		return $namespace;
 	}

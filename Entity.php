@@ -660,8 +660,9 @@ abstract class Entity
 		} else {
 			// Get the first non-inherited manager.
 			// Example: if using $vfi->client, we actually get Dynatron/Vfi here, even though Vfi inherts from Iam, we want Vfi
-			$tmp = explode('\\', get_class($this));
-			return app($tmp[0].'\\'.$tmp[1]);
+			$class = get_class($this);
+			$baseClass = substr($class, 0, strrpos($class, '\\'));
+			return app($baseClass);
 		}
 
 	}
