@@ -9,9 +9,9 @@ The repository fires many events.  All are string based events, not class based.
 They are string based so they can be separated by entity, much like how eloquent
 fires events by model name so you can listen to individual models not just all models.
 
-All events are string based in this format: `repository.vendor.package.entity.event`
+All events are prefixed with `repository.yourrepo.yourentity`.
 
-Example `dynatron/vfi` events on a `customer` entity:
+Example dynatron/vfi events on a `customer` entity.
 
 **Entity level events:**
 
@@ -34,6 +34,12 @@ Example `dynatron/vfi` events on a `customer` entity:
 * `repository.dynatron.vfi.customer.deleted`
 * `repository.dynatron.vfi.customer.truncating`
 * `repository.dynatron.vfi.customer.truncated`
+
+**Listeners**
+
+Laravel can listen to wildcard events:
+
+	$dispatcher->listen('dynatron.vfi.*.overflow', 'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
 
 
 # Testing
