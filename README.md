@@ -9,7 +9,7 @@ The repository fires many events.  All are string based events, not class based.
 They are string based so they can be separated by entity, much like how eloquent
 fires events by model name so you can listen to individual models not just all models.
 
-All events are prefixed with `repository.yourrepo.yourentity`.
+All events are prefixed with `repository.vendor.package.entity.event`.
 
 Example dynatron/vfi events on a `customer` entity.
 
