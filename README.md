@@ -3,6 +3,39 @@
 Repository and Entity Manager
 
 
+# Events
+
+The repository fires many events.  All are string based events, not class based.
+They are string based so they can be separated by entity, much like how eloquent
+fires events by model name so you can listen to individual models not just all models.
+
+All events are prefixed with `repository.yourrepo.yourentity`.
+
+Example dynatron/vfi events on a `customer` entity.
+
+**Entity level events:**
+
+* `repository.dynatron.vfi.customer.overflow`
+* `repository.dynatron.vfi.customer.attributes.saving`
+* `repository.dynatron.vfi.customer.attributes.saved`
+* `repository.dynatron.vfi.customer.attributes.deleting`
+* `repository.dynatron.vfi.customer.attributes.deleted`
+* `repository.dynatron.vfi.customer.attributes.saving`
+
+**Store level events:**
+
+* `repository.dynatron.vfi.customer.saving`
+* `repository.dynatron.vfi.customer.saved`
+* `repository.dynatron.vfi.customer.creating`
+* `repository.dynatron.vfi.customer.created`
+* `repository.dynatron.vfi.customer.updating`
+* `repository.dynatron.vfi.customer.updated`
+* `repository.dynatron.vfi.customer.deleting`
+* `repository.dynatron.vfi.customer.deleted`
+* `repository.dynatron.vfi.customer.truncating`
+* `repository.dynatron.vfi.customer.truncated`
+
+
 # Testing
 
 This is an mrcore module, so mrcore5 is required to run the tests.

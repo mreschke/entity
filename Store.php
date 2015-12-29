@@ -875,7 +875,7 @@ abstract class Store
 		// Get event name (ex: dynatron.iam.client.deleting)
 		$namespace = strtolower($this->realNamespace());
 		$entity = str_replace('_', '-', snake_case($this->attributes('entity')));
-		$event = str_replace('\\', '.', "$namespace.$entity.$event");
+		$event = 'repository.'.str_replace('\\', '.', "$namespace.$entity.$event");
 
 		// Fire event
 		$method = $halt ? 'until' : 'fire';

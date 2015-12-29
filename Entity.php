@@ -699,7 +699,7 @@ abstract class Entity
 		// Get event name (ex: dynatron.iam.client.deleting)
 		$namespace = strtolower($this->realNamespace());
 		$entity = str_replace('_', '-', snake_case($this->store->attributes('entity')));
-		$event = str_replace('\\', '.', "$namespace.$entity.$event");
+		$event = 'repository.'.str_replace('\\', '.', "$namespace.$entity.$event");
 
 		// Fire event
 		$method = $halt ? 'until' : 'fire';

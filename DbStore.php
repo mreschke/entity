@@ -415,7 +415,7 @@ abstract class DbStore extends Store implements StoreInterface
 		// This SET statement fails with sqlite
 		try {
 			$this->connection->statement("SET foreign_key_checks=0");
-		} catch (\Exception $e) {
+		} catch (Exception $e) {
 			// do nothing
 		}
 
@@ -423,7 +423,7 @@ abstract class DbStore extends Store implements StoreInterface
 
 		try {
 			$this->connection->statement("SET foreign_key_checks=1");
-		} catch (\Exception $e) {
+		} catch (Exception $e) {
 			// do nothing
 		}
 
