@@ -263,7 +263,7 @@ abstract class Entity
 
 				// Set a single attribute
 				$originalValue = $this->attributes($key);
-				if ($this->fireEvent('attributes.saving', ['key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
+				if ($this->fireEvent('attributes.saving', ['entity' => $this, 'key' => $key, 'value' => $value, 'original' => $originalValue]) === false) return false;
 
 				$attributes = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
 				if (isset($attributes)) {
@@ -291,7 +291,9 @@ abstract class Entity
 					'value' => $value
 				]);
 
-				$this->fireEvent('attributes.saved', ['key' => $key, 'value' => $value, 'original' => $originalValue]);
+				#dd($this);
+
+				$this->fireEvent('attributes.saved', ['entity' => $this, 'key' => $key, 'value' => $value, 'original' => $originalValue]);
 
 				// Refresh attributes
 				unset($this->attributes);
@@ -335,7 +337,7 @@ abstract class Entity
 
 		// Deleting a key
 		$value = $this->attributes($key);
-		if ($this->fireEvent('attributes.deleting', ['key' => $key, 'value' => $value]) === false) return false;
+		if ($this->fireEvent('attributes.deleting', ['entity' => $this, 'key' => $key, 'value' => $value]) === false) return false;
 
 		$attributes = $this->manager->attribute->where('entity', $entity)->where('entityKey', $entityKey)->first();
 		if (isset($attributes)) {
@@ -356,7 +358,7 @@ abstract class Entity
 				$index->delete();
 			}
 
-			$this->fireEvent('attributes.deleted', ['key' => $key, 'value' => $value]);
+			$this->fireEvent('attributes.deleted', ['entity' => $this, 'key' => $key, 'value' => $value]);
 
 			// Refresh attributes
 			unset($this->attributes); $this->attributes();

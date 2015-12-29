@@ -825,14 +825,6 @@ abstract class Store
 	}
 
 	/**
-	 * Legacy alias to manager()
-	 */
-	protected function entityManagerX($entity = null)
-	{
-		return $this->manager($entity);
-	}
-
-	/**
 	 * Get the real master namespace in case of store inheritance
 	 * @return string
 	 */
