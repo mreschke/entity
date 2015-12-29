@@ -39,7 +39,7 @@ Example dynatron/vfi events on a `customer` entity.
 
 Laravel can listen to wildcard events:
 
-	$dispatcher->listen('dynatron.vfi.*.overflow', 'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
+	$dispatcher->listen('repository.dynatron.vfi.*.overflow', 'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
 
 
 # Testing
