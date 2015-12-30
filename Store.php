@@ -343,7 +343,7 @@ abstract class Store
 	public function update($entity, $data)
 	{
 		if (is_object($data) && get_class($data) == get_class($entity)) {
-			// Data is already and entity object
+			// Data is already an entity object
 			return $this->save($data);
 		}
 

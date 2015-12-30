@@ -546,7 +546,7 @@ abstract class Entity
 	 */
 	public function save()
 	{
-		return $this->store->update($this, $this);
+		return $this->store->save($this);
 	}
 
 	/**
