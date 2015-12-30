@@ -103,13 +103,6 @@ interface StoreInterface
 	public function count();
 
 	/**
-	 * Save one or multiple entity objects
-	 * @param  array|object $entities
-	 * @return array|object
-	 */
-	public function save($entities);
-
-	/**
 	 * Insert one or multiple records by array
 	 * @param  object $entity
 	 * @param  array $data

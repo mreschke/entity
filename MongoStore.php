@@ -171,10 +171,11 @@ abstract class MongoStore extends Store implements StoreInterface
 
 	/**
 	 * Save one or multiple entity objects
+	 * Notice this is protected, use public insert/create/update methods instead
 	 * @param  array|object $entities
 	 * @return array|object|boolean
 	 */
-	public function save($entities)
+	protected function save($entities)
 	{
 		if ($this->fireEvent('saving', $entities) === false) return false;
 

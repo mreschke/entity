@@ -532,7 +532,7 @@ abstract class Entity
 
 	/**
 	 * Update this object by array
-	 * @param  array $data
+	 * @param  array|object $data
 	 * @return array|object|boolean
 	 */
 	public function update($data)
@@ -546,7 +546,7 @@ abstract class Entity
 	 */
 	public function save()
 	{
-		return $this->store->save($this);
+		return $this->store->update($this, $this);
 	}
 
 	/**

@@ -2,6 +2,7 @@
 
 use Event;
 use stdClass;
+use Exception;
 use Illuminate\Support\Collection;
 
 /**
@@ -311,7 +312,10 @@ abstract class Store
 		if ($data instanceof Collection) $data = $data->toArray();
 
 		// Single object (one entity), just save it
-		if (is_object($data)) return $this->save($data);
+		if (is_object($data)) {
+			// Runs through ->update first just in case its not already an entity object
+			return $this->update($entity, $data);
+		}
 
 		// Array of objects or array of arrays
 		if (is_object(head($data)) && get_class(head($data)) == get_class($entity)) {
@@ -333,15 +337,22 @@ abstract class Store
 	/**
 	 * Update a record by array
 	 * @param  object $entity
-	 * @param  array $data
+	 * @param  array|object $data
 	 * @return array|object|boolean
 	 */
 	public function update($entity, $data)
 	{
+		if (is_object($data) && get_class($data) == get_class($entity)) {
+			// Data is already and entity object
+			return $this->save($data);
+		}
+
+		// Translate array or stdClass into entity object, then save
 		foreach ($data as $key => $value) {
 			$entity->$key = $value;
 		}
 		return $this->save($entity);
+
 	}
 
 	/**
