@@ -2,6 +2,7 @@
 
 use Event;
 use stdClass;
+use Illuminate\Support\Collection;
 
 /**
  * Repository Store
@@ -291,28 +292,42 @@ abstract class Store
 	}
 
 	/**
-	 * Insert one or multiple records by array
+	 * Insert one or multiple records by array or collection
 	 * @param  object $entity
-	 * @param  array $data
+	 * @param  \Illuminate\Support\Collection|array $data
 	 * @return array|object|boolean
 	 */
 	public function insert($entity, $data)
 	{
-		if (array_keys($data) !== range(0, count($data) - 1)) {
-			// Single record assoc array
+		// Empty data
+		if (!isset($data) || count($data) == 0) return;
+
+		// Single record assoc array
+		if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)) {
 			return $this->update($entity, $data);
 		}
 
-		// Creating bulk records
-		$entities = array();
-		foreach ($data as $item) {
+		// Convert collection to array
+		if ($data instanceof Collection) $data = $data->toArray();
+
+		// Single object (one entity), just save it
+		if (is_object($data)) return $this->save($data);
+
+		// Array of objects or array of arrays
+		if (is_object(head($data)) && get_class(head($data)) == get_class($entity)) {
+			// Data is an array of entity objects
+			return $this->save($data);
+		}
+
+		// Convert array of arrays or array of objects into array of entity objects
+		array_walk($data, function(&$item) use($entity) {
 			$entity = $entity->newInstance();
 			foreach ($item as $key => $value) {
 				$entity->$key = $value;
 			}
-			$entities[] = $entity;
-		}
-		return $this->save($entities);
+			$item = $entity;
+		});
+		return $this->save($data);
 	}
 
 	/**

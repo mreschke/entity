@@ -512,7 +512,7 @@ abstract class Entity
 
 	/**
 	 * Insert one or multiple records by array
-	 * @param  array $data
+	 * @param  \Illuminate\Support\Collection|array $data
 	 * @return array|object|boolean
 	 */
 	public function insert($data)
@@ -522,7 +522,7 @@ abstract class Entity
 
 	/**
 	 * Alias to insert
-	 * @param  array $data
+	 * @param  \Illuminate\Support\Collection|array $data
 	 * @return array|object|boolean
 	 */
 	public function create($data)
