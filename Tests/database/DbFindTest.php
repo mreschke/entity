@@ -16,7 +16,7 @@ class DbFindTest extends TestCase
 		$client = $this->fake->client->find(1);
 		$this->assertInstanceOf('Mreschke\Repository\Fake\Client', $client);
 		$this->assertSame((array) $client, $this->client1Stub());
-        #dd($client);
+		#dd($client);
 	}
 
 	public function testFindAll()
