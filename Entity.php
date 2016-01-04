@@ -365,7 +365,20 @@ abstract class Entity
 			return $value;
 
 		}
+	}
 
+	/**
+	 * Set attribute if value, else forget (delete) attribute
+	 * @param string $key
+	 * @param mixed $value
+	 */
+	public function setOrForgetAttribute($key, $value)
+	{
+		if ($value) {
+			$this->attributes($key, $value);
+		} else {
+			$this->forgetAttribute($key);
+		}
 	}
 
 	/**
