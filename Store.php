@@ -356,6 +356,65 @@ abstract class Store
 	}
 
 	/**
+	 * Delete one or multiple records by array or collection
+	 * @param  object $entity
+	 * @param  \Illuminate\Support\Collection|array $data
+	 * @return array|object|boolean
+	 */
+	public function delete($entity, $data)
+	{
+		// Empty data
+		if (!isset($data) || count($data) == 0) return;
+
+		// Single record assoc array
+		if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)) {
+			if (is_object($data) && get_class($data) == get_class($entity)) {
+				// Data is already an entity object
+				return $this->destroy($data);
+			}
+
+			// Translate array or stdClass into entity object, then save
+			foreach ($data as $key => $value) {
+				$entity->$key = $value;
+			}
+			return $this->destroy($data);
+		}
+
+		// Convert collection to array
+		if ($data instanceof Collection) $data = $data->toArray();
+
+		// Single object (one entity), just save it
+		if (is_object($data)) {
+			if (is_object($data) && get_class($data) == get_class($entity)) {
+				// Data is already an entity object
+				return $this->destroy($data);
+			}
+
+			// Translate array or stdClass into entity object, then save
+			foreach ($data as $key => $value) {
+				$entity->$key = $value;
+			}
+			return $this->destroy($data);
+		}
+
+		// Array of objects or array of arrays
+		if (is_object(head($data)) && get_class(head($data)) == get_class($entity)) {
+			// Data is an array of entity objects
+			return $this->destroy($data);
+		}
+
+		// Convert array of arrays or array of objects into array of entity objects
+		array_walk($data, function(&$item) use($entity) {
+			$entity = $entity->newInstance();
+			foreach ($item as $key => $value) {
+				$entity->$key = $value;
+			}
+			$item = $entity;
+		});
+		return $this->destroy($data);
+	}
+
+	/**
 	 * Add a where attributes clause to the query
 	 * @param  string  $column
 	 * @param  mixed   $value

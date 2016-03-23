@@ -563,11 +563,14 @@ abstract class Entity
 	}
 
 	/**
-	 * Delete this object from the store
+	 * Delete one or multiple objects from the store
+	 * @param  \Illuminate\Support\Collection|array $data
+	 * @param  array|object $data
 	 */
-	public function delete()
+	public function delete($data = null)
 	{
-		$this->store->delete($this);
+		if (!$data) $data = $this;
+		$this->store->delete($this->newInstance(), $data);
 	}
 
 	/**

@@ -383,22 +383,39 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
-	 * Delete this object from the store
-	 * @param  object $entity
+	 * Delete one or multiple entity objects
+	 * @param  array|object $entities
+	 * @return array|object|boolean
 	 */
-	public function delete($entity)
+	public function destroy($entities)
 	{
-		if ($this->fireEvent('deleting', $entity) === false) return false;
-
 		$primary = $this->attributes('primary');
-		if (isset($primary)) {
-			$entityPrimary = $this->map($primary, true);
-			$id = $entity->$entityPrimary;
 
-			// This will throw exception on errors like integrity constraint...good
-			$this->table()->where($primary, $id)->delete();
+		if (is_array($entities)) {
+			// Delete bulk records
+			$ids = [];
+			foreach ($entities as $entity) {
+				$transformed = $this->transformEntity($entity);
+				$ids[$transformed[$primary]] = $transformed[$primary];
+			}
 
-			$this->fireEvent('deleted', $entity);
+			if ($this->fireEvent('deleting', $entities) === false) return false;
+
+			$this->table()->whereIn($primary, $ids)->delete();
+
+			$this->fireEvent('deleted', $entities);
+		} else {
+			if ($this->fireEvent('deleting', $entities) === false) return false;
+
+			if (isset($primary)) {
+				$entityPrimary = $this->map($primary, true);
+				$id = $entities->$entityPrimary;
+
+				// This will throw exception on errors like integrity constraint...good
+				$this->table()->where($primary, $id)->delete();
+
+				$this->fireEvent('deleted', $entities);
+			}
 		}
 	}
 
