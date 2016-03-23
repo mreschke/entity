@@ -12,14 +12,11 @@ use Illuminate\Database\ConnectionInterface;
  */
 abstract class DbStore extends Store implements StoreInterface
 {
-
 	/**
 	 * The database connection instance
 	 * @var \Illuminate\Database\ConnectionInterface
 	 */
 	protected $connection;
-
-	protected $with;
 
 	/**
 	 * Create a new instance of this store

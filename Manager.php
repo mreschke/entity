@@ -14,7 +14,7 @@ class Manager
 	 * The application instance
 	 * @var \Illuminate\Foundation\Application
 	 */
-	protected $app;
+	protected $ioc;
 
 	/**
 	 * Base namespace
@@ -51,9 +51,9 @@ class Manager
 	 * @param  \Illuminate\Foundation\Application  $app
 	 * @return void
 	 */
-	public function __construct($app)
+	public function __construct($ioc)
 	{
-		$this->app = $app;
+		$this->ioc = $ioc;
 	}
 
 	/**
@@ -136,7 +136,7 @@ class Manager
 	protected function createDbStore($storeKey, $storeClassname, $config)
 	{
 		// Make a database connection
-		$connection = $this->app['db']->connection($config['connection']);
+		$connection = $this->ioc['db']->connection($config['connection']);
 
 		// Create a new store instance
 		return new $storeClassname($this, $storeKey, $connection);
@@ -214,7 +214,7 @@ class Manager
 	 */
 	public function config($name)
 	{
-		return $this->app['config'][$this->configKey.".$name"];
+		return $this->ioc['config'][$this->configKey.".$name"];
 	}
 
 	/**

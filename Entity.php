@@ -1,6 +1,5 @@
 <?php namespace Mreschke\Repository;
 
-use App;
 use Event;
 use Mreschke\Helpers\Str;
 
@@ -369,6 +368,7 @@ abstract class Entity
 
 	/**
 	 * Set attribute if value, else forget (delete) attribute
+	 * NOTE: a zero (0) value will be considered empty and therefore forget the attribute.
 	 * @param string $key
 	 * @param mixed $value
 	 */
