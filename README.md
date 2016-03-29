@@ -35,46 +35,48 @@ In my examples, I have an application called VFI which has users, dealers, ros, 
 
 ## Getting Records
 
-	```php
-	// Single record based on primary key
-	$user = $this->vfi->user->find(1234);
+```php
+<?php
+// Single record based on primary key
+$user = $this->vfi->user->find(1234);
 
-	// Single record based on where statement
-	$user = $this->vfi->user->where('email', 'mail@mreschke.com')->first();
+// Single record based on where statement
+$user = $this->vfi->user->where('email', 'mail@mreschke.com')->first();
 
-	// Multi record and wheres
-	$users = $this->vfi->user->all(); //or ->get() also works
-	$users = $this->vfi->user->where('disabled', false)->get();
-	$users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get();
+// Multi record and wheres
+$users = $this->vfi->user->all(); //or ->get() also works
+$users = $this->vfi->user->where('disabled', false)->get();
+$users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get();
 
-	// Selects and lists
-	$users = $this->vfi->user->select('id', 'name')->where('disabled', false)->all();
-	$users = $this->vfi->user->select('id', 'name')->lists('name', 'id');
-	```
+// Selects and lists
+$users = $this->vfi->user->select('id', 'name')->where('disabled', false)->all();
+$users = $this->vfi->user->select('id', 'name')->lists('name', 'id');
+```
 
 ## Lazy and Eager Loading
 
 To access relationships (subentities) you can use the `->with()` keyword or use a custom build entity method.  Using the `->with()` keyword in the proper place along the chain will cause either a lazy load or an eager load.  Lazy loading will run one relationship for each eneity and can be VERY inefficient if handled improperly.  Eager loading allows you to pre load all relationships for all entities queried.  Eager loading will actually run 2 queries.  One for your main entites, and one for your relationships based on an IN statement.  These results are then combined in PHP.  
 
-	```php
-	// Lazy loaded using ->with() method
-	$user = $this->vfi->user->find(1234)->with('address'); //lazy query happens here
-	echo $user->address->state;
+```php
+<?php
+// Lazy loaded using ->with() method
+$user = $this->vfi->user->find(1234)->with('address'); //lazy query happens here
+echo $user->address->state;
 
-	// Lazy loaded using automatic method
-	$user = $this->vfi->user->find(1234);
+// Lazy loaded using automatic method
+$user = $this->vfi->user->find(1234);
+echo $user->address->state; //lazy query happens here
+
+// Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
+$users = $this->vfi->user->all();
+foreach ($users as $user) {
 	echo $user->address->state; //lazy query happens here
+}
 
-	// Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
-	$users = $this->vfi->user->all();
-	foreach ($users as $user) {
-		echo $user->address->state; //lazy query happens here
-	}
-
-	// Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
-	// Notice ->with() is BEFORE ->all() or ->get()
-	$users = $this->vfi->user->with('address')->all();
-	```
+// Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
+// Notice ->with() is BEFORE ->all() or ->get()
+$users = $this->vfi->user->with('address')->all();
+```
 
 ## Attributes System
 
@@ -84,104 +86,109 @@ Attributes can be both lazy loaded and eager loaded.  Be very careful here as us
 
 *NOTE:* Attributes are meant to be small key/values, not large million line strings. When you load any one attribute, ALL attributes for that entity are also loaded into the same `->attributes` property.  So having hundreds of small attributes per ONE entity is also not advised. The `->object()` system is however designed for unlimited and massive any size objects.
 
-	```php
-	// Lazy loaded attributes using ->with() method
-	$user = $this->vfi->user->find(1234)->with('attributes'); //lazy query happens here
-	echo $user->attributes('some-attribute');
+```php
+<?php
+// Lazy loaded attributes using ->with() method
+$user = $this->vfi->user->find(1234)->with('attributes'); //lazy query happens here
+echo $user->attributes('some-attribute');
 
-	// Lazy loaded attributes using automatic method
-	$user = $this->vfi->user->find(1234);
+// Lazy loaded attributes using automatic method
+$user = $this->vfi->user->find(1234);
+echo $user->attributes('some-attribute'); //lazy query happens here
+
+// Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
+$users = $this->vfi->user->all();
+foreach ($users as $user) {
 	echo $user->attributes('some-attribute'); //lazy query happens here
+}
 
-	// Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
-	$users = $this->vfi->user->all();
-	foreach ($users as $user) {
-		echo $user->attributes('some-attribute'); //lazy query happens here
-	}
+// Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
+// Notice ->with() is BEFORE ->all() or ->get()
+$users = $this->vfi->user->with('attributes')->all();
 
-	// Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
-	// Notice ->with() is BEFORE ->all() or ->get()
-	$users = $this->vfi->user->with('attributes')->all();
+// Find entity records based on an attribute value
+$users = $this->vfi->user->whereAttribute('some-attribute', 'someValue')->get();
 
-	// Find entity records based on an attribute value
-	$users = $this->vfi->user->whereAttribute('some-attribute', 'someValue')->get();
+// Find entity records that even have this attribute (value is not important)
+$users = $this->vfi->user->whereAttribute('some-attribute')->get();
 
-	// Find entity records that even have this attribute (value is not important)
-	$users = $this->vfi->user->whereAttribute('some-attribute')->get();
+// Setting attributes
+$this->vfi->user->find(1234)->attributes('new-attribute', 'new value here');
 
-	// Setting attributes
-	$this->vfi->user->find(1234)->attributes('new-attribute', 'new value here');
+// Delete attribute (single)
+$this->vfi->user->find(1234)->forgetAttribute('some-attribute');
 
-	// Delete attribute (single)
-	$this->vfi->user->find(1234)->forgetAttribute('some-attribute');
-
-	// Delete all attributes
-	// There is no way to delete all attributes other than looping them all manually
-	$user = $this->vfi->user->find(1234)->with('attributes');
-	foreach ($user->attributes as $attribute) {
-		$user->forgetAttribute($attribute)
-	}
-	```
+// Delete all attributes
+// There is no way to delete all attributes other than looping them all manually
+$user = $this->vfi->user->find(1234)->with('attributes');
+foreach ($user->attributes as $attribute) {
+	$user->forgetAttribute($attribute)
+}
+```
 
 
 ## Entity Formatting
 
 Before you insert new entities into the database you can run your array through the entity formatter.  This will format each colum based on your store map section.  This allows you to uppercase, lowercase, trim...the values before being inserted.  If a value exceeds a defined `size` property, an `overflow` event is fired, see [Events](#events) for details.
 
-	```php
-	$newEntities = 'this is an array of your items you want to insert';
-	foreach ($newEntities as $entity) {
-		// Format entities first
-		$entity->format();
+```php
+<?php
+$newEntities = 'this is an array of your items you want to insert';
+foreach ($newEntities as $entity) {
+	// Format entities first
+	$entity->format();
 
-		// Save to backend
-		$entity->save();
-	}
-	```
+	// Save to backend
+	$entity->save();
+}
+```
 
 ## Deleting Records
 
-	```php
-	// Single entity delete
-	$this->vfi->roItem->find(1234)->delete();
-	$this->vfi->roItem->where('roNum', 222258)->first()->delete();
+```php
+<?php
+// Single entity delete
+$this->vfi->roItem->find(1234)->delete();
+$this->vfi->roItem->where('roNum', 222258)->first()->delete();
 
-	// Bulk query builder based delete (most efficient)
-	// Results in query: DELETE FROM table WHERE techNum = 842
-	$this->vfi->roItem->where('techNum', 903)->delete();
+// Bulk query builder based delete (most efficient)
+// Results in query: DELETE FROM table WHERE techNum = 842
+$this->vfi->roItem->where('techNum', 903)->delete();
 
-	// Multiple collection of entities
-	// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
-	$ros = $this->vfi->roItem->where('techNum', 903)->get();
-	$this->vfi->roItem->delete($ros);
+// Multiple collection of entities
+// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
+$ros = $this->vfi->roItem->where('techNum', 903)->get();
+$this->vfi->roItem->delete($ros);
 
-	// Multiple array of entities
-	// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
-	$ros = $this->vfi->roItem->where('techNum', 903)->get();
-	$ros = $ros->toArray();
-	$this->vfi->roItem->delete($ros);
+// Multiple array of entities
+// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
+$ros = $this->vfi->roItem->where('techNum', 903)->get();
+$ros = $ros->toArray();
+$this->vfi->roItem->delete($ros);
 
-	// Multiple array of arrays
-	// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
-	$ros = $this->vfi->roItem->where('techNum', 903)->get();
-	$tmp = [];
-	foreach ($ros as $ro) {
-		$tmp[] = (array) $ro;
-	}
-	$this->vfi->roItem->delete($ros);
+// Multiple array of arrays
+// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
+$ros = $this->vfi->roItem->where('techNum', 903)->get();
+$tmp = [];
+foreach ($ros as $ro) {
+	$tmp[] = (array) $ro;
+}
+$this->vfi->roItem->delete($ros);
 
-	// Multiple array of arrays manually
-	// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
-	$this->vfi->roItem->delete([
-		['id' => 1],
-		['id' => 2],
-		['id' => 3]
-	]);
+// Multiple array of arrays manually
+// Results in query: DELETE FROM table WHERE IN (1,2,3,...)
+$this->vfi->roItem->delete([
+	['id' => 1],
+	['id' => 2],
+	['id' => 3]
+]);
 
-	// Trying to delete * should fail in case we messed up the query builder
-	// To delete * use ->truncate instead
-	$this->vfi->roItem->delete();
-	```
+// Trying to delete * should fail in case we messed up the query builder
+// To delete * use ->truncate instead
+$this->vfi->roItem->delete();
+```
+
+
 
 
 
@@ -189,11 +196,6 @@ Before you insert new entities into the database you can run your array through 
 # Getting Started
 
 This section explains how to setup `mreschke/repository`.  How you can use this system for your own entities.
-
-
-
-
-
 
 
 
@@ -237,8 +239,11 @@ Example dynatron/vfi events on a `customer` entity.
 
 Laravel can listen to wildcard events:
 
-	$dispatcher->listen('repository.dynatron.vfi.*.overflow', 'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
-
+```php
+<?php
+$dispatcher->listen('repository.dynatron.vfi.*.overflow',
+  'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
+```
 
 
 <a name="testing"></a>
@@ -309,7 +314,10 @@ These now perfeclty mapped entities also act like plain old PHP objects.  Meanin
 
 Not only are our entities now perfectly and consistently mapped for output, we can also reliably query on those perfectly mapped columns too!
 
-	// So we can now use firstName not first_name everywhere, like so
-	$user = $this->vfi->user->where('firstName', 'Matthew')->first()
+```php
+<?php
+// So we can now use firstName not first_name everywhere, like so
+$user = $this->vfi->user->where('firstName', 'Matthew')->first()
+```
 
 Of course, since your entities are just plan old PHP objects, you can add any other methods or properties you choose as helpers.  Like if you wanted a `byName` helper, just add it to your entity
