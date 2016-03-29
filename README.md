@@ -4,6 +4,7 @@
 - [Basic Usage and Syntax](#usage)
 - [Getting Started](#started)
 - [Events](#events)
+- [Testing](#testing)
 - [Why Was this Written](#why)
 
 <a name="introduction"></a>
@@ -239,6 +240,8 @@ Laravel can listen to wildcard events:
 	$dispatcher->listen('repository.dynatron.vfi.*.overflow', 'Dynatron\Vfi\Listeners\RepositoryEventSubscription@overflowHandler');
 
 
+
+<a name="testing"></a>
 # Testing
 
 This is an mrcore module, so mrcore5 is required to run the tests.
@@ -259,54 +262,54 @@ Seed once...test anytime
 
 
 
-	<a name="why"></a>
-	# Why Was this Written
+<a name="why"></a>
+# Why Was this Written
 
-	*fixme* not complete
-
-
-	Back in 2015 repositories were all the range in the Laravel community.  Their benefits were obvious but their implementation was verbose, cumbersome and not as easy to "query build" like eloquent.
-
-	Most people like the idea of having a repository layer just in case they ever decide to swap out the backend.  The problem for most people is that engineering for the future of backend changes is often a waste of time and considered over engineering.  This wasn't true for my case as I was currently in the middle of re-writing all of my software from MSSQL into MySQL and MongoDB.  This was a 5 year chess game and required some apps to run with legacy MSSQL backend while others would run with new MySQL backends.   These backend were temporary and moving and migrating monthly during this transition phase. This meant I was forced to think "API first".  In other words, I didn't need to care where my data currently was and where it was going to end up.  All I needed to think about was how I wanted to interact with my data in an ideal world.  The repository pattern allowed me to build beautiful APIs into my data even though the backend was MSSQL garbage.  Instead of legacy columns like `users_first_name` I could map that to simply `$user->name`, something eloquent does not provide.  
+*fixme* not complete
 
 
-	So if your database looks like this
+Back in 2015 repositories were all the range in the Laravel community.  Their benefits were obvious but their implementation was verbose, cumbersome and not as easy to "query build" like eloquent.
 
-		Table: tblContacts
-		---------------
-		contact_id
-		first_name
-		last_name
-		email
+Most people like the idea of having a repository layer just in case they ever decide to swap out the backend.  The problem for most people is that engineering for the future of backend changes is often a waste of time and considered over engineering.  This wasn't true for my case as I was currently in the middle of re-writing all of my software from MSSQL into MySQL and MongoDB.  This was a 5 year chess game and required some apps to run with legacy MSSQL backend while others would run with new MySQL backends.   These backend were temporary and moving and migrating monthly during this transition phase. This meant I was forced to think "API first".  In other words, I didn't need to care where my data currently was and where it was going to end up.  All I needed to think about was how I wanted to interact with my data in an ideal world.  The repository pattern allowed me to build beautiful APIs into my data even though the backend was MSSQL garbage.  Instead of legacy columns like `users_first_name` I could map that to simply `$user->name`, something eloquent does not provide.  
 
-		Table: tblAddresses
-		-------------------
-		address_id
-		address
-		zip_code
 
-	You can build perfectly mapped (translated) entities that look like this
+So if your database looks like this
 
-		// We don't want to use the word contacts or tblContacts, we want to use 'users'
-		// And we don't want first_name, we want firstName...thus the entity mapper
-		var_dump( $this->vfi->user->find(1)->with('address') )
-		Mreschke\Vfi\User {
-			id: 1
-			firstName: "Matthew"
-			lastName: "Reschke"
-			email: "mail@mreschke.com"
-			address: {
-				id: "3212"
-				address: "Some address"
-				zip: 75067
-			}
+	Table: tblContacts
+	---------------
+	contact_id
+	first_name
+	last_name
+	email
+
+	Table: tblAddresses
+	-------------------
+	address_id
+	address
+	zip_code
+
+You can build perfectly mapped (translated) entities that look like this
+
+	// We don't want to use the word contacts or tblContacts, we want to use 'users'
+	// And we don't want first_name, we want firstName...thus the entity mapper
+	var_dump( $this->vfi->user->find(1)->with('address') )
+	Mreschke\Vfi\User {
+		id: 1
+		firstName: "Matthew"
+		lastName: "Reschke"
+		email: "mail@mreschke.com"
+		address: {
+			id: "3212"
+			address: "Some address"
+			zip: 75067
 		}
+	}
 
-	These now perfeclty mapped entities also act like plain old PHP objects.  Meaning you can var_dump() or dd() or dump() them in PHP and get very nice looking results, instead of like Eloquent or Query builder where you get a million other Laravel properites along with it.  *This gives you clean dumps, which are a huge benifit!*
+These now perfeclty mapped entities also act like plain old PHP objects.  Meaning you can var_dump() or dd() or dump() them in PHP and get very nice looking results, instead of like Eloquent or Query builder where you get a million other Laravel properites along with it.  *This gives you clean dumps, which are a huge benifit!*
 
-	Not only are our entities now perfectly and consistently mapped for output, we can also reliably query on those perfectly mapped columns too!
+Not only are our entities now perfectly and consistently mapped for output, we can also reliably query on those perfectly mapped columns too!
 
-		// So we can now use firstName not first_name everywhere, like so
-		$user = $this->vfi->user->where('firstName', 'Matthew')->first()
+	// So we can now use firstName not first_name everywhere, like so
+	$user = $this->vfi->user->where('firstName', 'Matthew')->first()
 
-	Of course, since your entities are just plan old PHP objects, you can add any other methods or properties you choose as helpers.  Like if you wanted a `byName` helper, just add it to your entity
+Of course, since your entities are just plan old PHP objects, you can add any other methods or properties you choose as helpers.  Like if you wanted a `byName` helper, just add it to your entity
