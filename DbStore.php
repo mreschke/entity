@@ -321,7 +321,7 @@ abstract class DbStore extends Store implements StoreInterface
 
 	/**
 	 * Save one or multiple entity objects
-	 * @param  array|object $entities
+	 * @param  array|object $entities array of entities, or single entity
 	 * @return array|object|boolean
 	 */
 	public function save($entities)
@@ -336,9 +336,7 @@ abstract class DbStore extends Store implements StoreInterface
 				$records[] = $this->transformEntity($entity);
 			}
 			if ($this->fireEvent('creating', $entities) === false) return false;
-
 			$this->table()->insert($records);
-
 			$this->fireEvent('created', $entities);
 
 		} else {
@@ -355,21 +353,17 @@ abstract class DbStore extends Store implements StoreInterface
 				$handle = $this->table()->where($primary, $entities->$primary);
 				if (is_null($handle->first())) {
 					// Insert a new record
+					if ($this->fireEvent('creating', $entities) === false) return false;
 					if ($increments) {
 						$entities->$primary = $this->table()->insertGetId($record);
 					} else {
-						if ($this->fireEvent('creating', $entities) === false) return false;
-
 						$this->table()->insert($record);
-
-						$this->fireEvent('created', $entities);
 					}
+					$this->fireEvent('created', $entities);
 				} else {
 					// Updating an existing record
 					if ($this->fireEvent('updating', $entities) === false) return false;
-
 					$handle->update($record);
-
 					$this->fireEvent('updated', $entities);
 				}
 			} else {
@@ -384,39 +378,67 @@ abstract class DbStore extends Store implements StoreInterface
 
 	/**
 	 * Delete one or multiple entity objects
-	 * @param  array|object $entities
+	 * @param  array|object|null $entities array of entities, or single entity
 	 * @return array|object|boolean
 	 */
-	public function destroy($entities)
+	protected function destroy($entities = null)
 	{
 		$primary = $this->attributes('primary');
+		if ($this->fireEvent('deleting', $entities) === false) return false;
 
-		if (is_array($entities)) {
-			// Delete bulk records
-			$ids = [];
-			foreach ($entities as $entity) {
-				$transformed = $this->transformEntity($entity);
-				$ids[$transformed[$primary]] = $transformed[$primary];
+		if (!isset($entities)) {
+			// Delete bulk records from a query builder (most efficient)
+			$this->transaction(function() {
+				$this->newQuery()->delete();
+			});
+
+		} elseif (is_array($entities)) {
+			// Delete bulk records from array
+			if (isset($primary)) {
+				// Delete by primary key IN statement
+				$ids = [];
+				foreach ($entities as $entity) {
+					$transformed = $this->transformEntity($entity);
+					$ids[] = $transformed[$primary];
+				}
+				$this->table()->whereIn($primary, $ids)->delete();
+
+			} else {
+				// Table has no primary, probably a linkage table
+				// Have to where on all columns to find match
+				$query = $this->table();
+				foreach ($entities as $entity) {
+					$transformed = $this->transformEntity($entity);
+					$query->orWhere(function($query) use($transformed) {
+						foreach ($transformed as $column => $value) {
+							$query->where($column, $value);
+						}
+					});
+				}
+				$query->delete();
 			}
 
-			if ($this->fireEvent('deleting', $entities) === false) return false;
-
-			$this->table()->whereIn($primary, $ids)->delete();
-
-			$this->fireEvent('deleted', $entities);
 		} else {
-			if ($this->fireEvent('deleting', $entities) === false) return false;
-
+			// Delete a single record
 			if (isset($primary)) {
+				// Delete by primary key
 				$entityPrimary = $this->map($primary, true);
 				$id = $entities->$entityPrimary;
 
 				// This will throw exception on errors like integrity constraint...good
 				$this->table()->where($primary, $id)->delete();
-
-				$this->fireEvent('deleted', $entities);
+			} else {
+				// Table has no primary, probably a linkage table
+				// Have to where on all columns to find match
+				$query = $this->table();
+				$transformed = $this->transformEntity($entities);
+				foreach ($transformed as $column => $value) {
+					$query->where($column, $value);
+				}
+				$query->delete();
 			}
 		}
+		$this->fireEvent('deleted', $entities);
 	}
 
 	/**

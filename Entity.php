@@ -565,11 +565,29 @@ abstract class Entity
 	/**
 	 * Delete one or multiple objects from the store
 	 * @param  \Illuminate\Support\Collection|array $data
-	 * @param  array|object $data
+	 * @param  object|null $data
 	 */
 	public function delete($data = null)
 	{
-		if (!$data) $data = $this;
+		if (!isset($data)) {
+			// Either ->delete() on single entity or query builder
+			$primary = $this->store->map($this->store->attributes('primary'), true);
+			if ($this->$primary) {
+				// Single entity
+				$data = $this;
+			} else {
+				// From query builder (most efficient)
+				// Careful, make sure there really was NO argument passed or passing a NULL $data
+				// could results in a select * query building being run which will wipe entire table
+				if (func_num_args() == 1) {
+					// Passed in a NULL array, not trying to query build, so cancel
+					return;
+				} else {
+					// Truely requesting a query builder delete
+					$data = null;
+				}
+			}
+		}
 		$this->store->delete($this->newInstance(), $data);
 	}
 

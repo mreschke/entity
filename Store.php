@@ -358,42 +358,25 @@ abstract class Store
 	/**
 	 * Delete one or multiple records by array or collection
 	 * @param  object $entity
-	 * @param  \Illuminate\Support\Collection|array $data
+	 * @param  \Illuminate\Support\Collection|array|null $data
 	 * @return array|object|boolean
 	 */
-	public function delete($entity, $data)
+	public function delete($entity, $data = null)
 	{
-		// Empty data
-		if (!isset($data) || count($data) == 0) return;
-
-		// Single record assoc array
-		if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)) {
-			if (is_object($data) && get_class($data) == get_class($entity)) {
-				// Data is already an entity object
+		// Deleting from a query builder (most efficient)
+		if (!isset($data)) {
+			if (isset($this->where)) {
 				return $this->destroy($data);
+			} else {
+				throw new Exception("Must specify a WHERE for deletes or use ->truncate() to delete the entire table.");
 			}
-
-			// Translate array or stdClass into entity object, then save
-			foreach ($data as $key => $value) {
-				$entity->$key = $value;
-			}
-			return $this->destroy($data);
 		}
 
 		// Convert collection to array
 		if ($data instanceof Collection) $data = $data->toArray();
 
-		// Single object (one entity), just save it
+		// Single object (one entity), just delete it
 		if (is_object($data)) {
-			if (is_object($data) && get_class($data) == get_class($entity)) {
-				// Data is already an entity object
-				return $this->destroy($data);
-			}
-
-			// Translate array or stdClass into entity object, then save
-			foreach ($data as $key => $value) {
-				$entity->$key = $value;
-			}
 			return $this->destroy($data);
 		}
 

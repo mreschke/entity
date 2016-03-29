@@ -126,11 +126,12 @@ interface StoreInterface
 	public function update($entity, $data);
 
 	/**
-	 * Delete one or multiple entity objects
-	 * @param  array|object $entity
-	 * @return array|object
+	 * Delete one or multiple records by array or collection
+	 * @param  object $entity
+	 * @param  \Illuminate\Support\Collection|array|null $data
+	 * @return array|object|boolean
 	 */
-	public function delete($entity, $data);
+	public function delete($entity, $data = null);
 
 	/**
 	 * Truncate all records
