@@ -377,6 +377,28 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
+	 * Update a single entity's values
+	 * @param  array $data
+	 * @return array|object|boolean
+	 */
+	protected function amend($data)
+	{
+		// Updating an existing record
+		if ($this->fireEvent('updating') === false) return false;
+		if (isset($data) && is_array($data)) {
+			foreach ($data as $column => $value) {
+				unset($data[$column]);
+				$data[$this->map($column)] = $value;
+			}
+			$this->transaction(function() use ($data) {
+				$this->newQuery()->update($data);
+			});
+		}
+
+		$this->fireEvent('updated');
+	}
+
+	/**
 	 * Delete one or multiple entity objects
 	 * @param  array|object|null $entities array of entities, or single entity
 	 * @return array|object|boolean

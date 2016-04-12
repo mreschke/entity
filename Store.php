@@ -303,18 +303,30 @@ abstract class Store
 		// Empty data
 		if (!isset($data) || count($data) == 0) return;
 
-		// Single record assoc array
-		if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)) {
-			return $this->update($entity, $data);
+		// Single Record assoc array
+		if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)){
+			// Convert to an entity object then save
+			foreach ($data as $key => $value) {
+				$entity->$key = $value;
+			}
+			return $this->save($entity);
 		}
 
 		// Convert collection to array
 		if ($data instanceof Collection) $data = $data->toArray();
 
 		// Single object (one entity), just save it
+		if (is_object($data) && get_class($data) == get_class($entity)) {
+			return $this->save($data);
+		}
+
+		// Is a non-entity object convert to standard object than save
 		if (is_object($data)) {
-			// Runs through ->update first just in case its not already an entity object
-			return $this->update($entity, $data);
+			// Convert to an entity object just in case it isn't one then save
+			foreach ($data as $key => $value) {
+				$entity->$key = $value;
+			}
+			return $this->save($entity);
 		}
 
 		// Array of objects or array of arrays
@@ -342,17 +354,26 @@ abstract class Store
 	 */
 	public function update($entity, $data)
 	{
+		// Single entity object
 		if (is_object($data) && get_class($data) == get_class($entity)) {
-			// Data is already an entity object
+			// Data is already a single entity object
 			return $this->save($data);
 		}
 
-		// Translate array or stdClass into entity object, then save
-		foreach ($data as $key => $value) {
-			$entity->$key = $value;
+		// Array of multiple entity objects
+		if (is_object(head($data)) && get_class(head($data)) == get_class($entity)) {
+			// Data is an array of entity objects
+			return $this->save($data);
 		}
-		return $this->save($entity);
 
+		// Array of non-objects, amend this entity
+		if (is_array($data)) {
+			if (isset($this->where)) {
+				return $this->amend($data);
+			} else {
+				throw new Exception("Must specify a WHERE for bulk entity updates at this time.");
+			}
+		}
 	}
 
 	/**
