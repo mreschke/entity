@@ -35,6 +35,8 @@ In my examples, I have an application called VFI which has users, dealers, ros, 
 
 ## Getting Records
 
+*NOTE:* `->all()` and `->get()` are identical and can be used interchangeably
+
 ```php
 <?php
 // Single record based on primary key
@@ -51,11 +53,32 @@ $users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get()
 // Selects and lists
 $users = $this->vfi->user->select('id', 'name')->where('disabled', false)->all();
 $users = $this->vfi->user->select('id', 'name')->lists('name', 'id');
+
+// Ordering records
+$users = $this->vfi->user->where('disabled', false)->orderBy('name')->all();
+
+// Counting records at a db level (not result level)
+$users = $this->vfi->user->count();
+$users = $this->vfi->user->where('disabled', false)->count();
+
+// Limiting records
+$users = $this->vfi->user->limit(0, 10)->get();
 ```
 
-## Lazy and Eager Loading
+## Joins
+```php
+<?php
 
-To access relationships (subentities) you can use the `->with()` keyword or use a custom build entity method.  Using the `->with()` keyword in the proper place along the chain will cause either a lazy load or an eager load.  Lazy loading will run one relationship for each eneity and can be VERY inefficient if handled improperly.  Eager loading allows you to pre load all relationships for all entities queried.  Eager loading will actually run 2 queries.  One for your main entites, and one for your relationships based on an IN statement.  These results are then combined in PHP.  
+```
+
+
+## Relationships
+
+Relationships involve subentities.  That is, entities that relate to other entities.  This repo system can access subentities in a few ways.  One is with a `->join` feature.  The `->join` feature cannot join cross repo and you must always `->select('specific', 'columns')` as * is not supported.  Another is the `->with` feature which is like an application level join and can be used both in `lazy` and `eager` modes. The `->with` feature is beneficial because you can join cross repository.
+
+To access relationships (subentities) you can use the `->with()` keyword or use a custom build entity method.  Using the `->with()` keyword in the proper place along the chain will cause either a lazy load or an eager load.  Lazy loading will run one relationship for each eneity and can be VERY inefficient if handled improperly.  Eager loading allows you to pre load all relationships for all entities queried.  Eager loading will actually run 2 queries.  One for your main entites, and one for your relationships based on an IN statement.  These results are then combined in PHP.
+
+You can also `->select()` with subentities using the period, ex: `->select('id', 'name', 'address.state')` where address is the subentity.
 
 ```php
 <?php
@@ -76,6 +99,22 @@ foreach ($users as $user) {
 // Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
 // Notice ->with() is BEFORE ->all() or ->get()
 $users = $this->vfi->user->with('address')->all();
+
+// Complex ->with() based query
+$query = $this->vfi->client->with('address');
+$totalRecords = $query->count(false); //count total before a filter
+#$query->select('id', 'name', 'address.city, 'address.state'); // this works, so does select * which is default
+$query->where('disabled', false);
+$query->where('address.state', 'CO');
+$query->limit(0, 10);
+$results = $query->get();
+
+// Complex ->join() based query
+$query = $this->vfi->client->joinAddress();
+$totalRecords = $query->count(false); //count total before a filter
+$query->select('id', 'name', 'address.city, 'address.state'); //required for join
+
+
 ```
 
 ## Attributes System
@@ -189,6 +228,27 @@ $this->vfi->roItem->delete();
 ```
 
 
+## Updating Records
+
+```php
+<?php
+// Update single entity using ->save
+$client = $this->vfi->client->find(5975);
+$client->name = "New Name";
+$client->save();
+
+// Update single entity using ->update and passing back the object
+$client = $this->vfi->client->find(5975);
+$client->name = "New Name";
+$this->vfi->client->update($client);
+
+// Update same column(s) on bulk records based on ->where
+// This is a query builder level update and the most efficient!
+$clients = $this->vfi->client
+	->where('disabled', true)
+	->update(['name' => 'DISABLED', 'date' => date()]);
+
+```
 
 
 

@@ -377,24 +377,26 @@ abstract class DbStore extends Store implements StoreInterface
 	}
 
 	/**
-	 * Update a single entity's values
+	 * Update bulk records using query builder
 	 * @param  array $data
-	 * @return array|object|boolean
+	 * @return void
 	 */
 	protected function amend($data)
 	{
-		// Updating an existing record
 		if ($this->fireEvent('updating') === false) return false;
 		if (isset($data) && is_array($data)) {
+
+			// Translate entity column names to store column names
 			foreach ($data as $column => $value) {
 				unset($data[$column]);
 				$data[$this->map($column)] = $value;
 			}
+
+			// Bulk update records!
 			$this->transaction(function() use ($data) {
 				$this->newQuery()->update($data);
 			});
 		}
-
 		$this->fireEvent('updated');
 	}
 

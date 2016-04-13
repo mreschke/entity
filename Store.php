@@ -360,18 +360,12 @@ abstract class Store
 			return $this->save($data);
 		}
 
-		// Array of multiple entity objects
-		if (is_object(head($data)) && get_class(head($data)) == get_class($entity)) {
-			// Data is an array of entity objects
-			return $this->save($data);
-		}
-
 		// Array of non-objects, amend this entity
 		if (is_array($data)) {
 			if (isset($this->where)) {
 				return $this->amend($data);
 			} else {
-				throw new Exception("Must specify a WHERE for bulk entity updates at this time.");
+				throw new Exception("Must specify a WHERE for bulk entity updates.");
 			}
 		}
 	}
