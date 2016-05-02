@@ -658,18 +658,12 @@ abstract class Store
 				$column = isset($options['column']) ? $options['column'] : null;
 				$filter = isset($options['filter']) ? $options['filter'] : null;
 
-				if (isset($column) && isset($store->$column)) {
-					// This is a database column which has been selected
-					// Its value is from the actual column or from a filter
-					if (isset($filter)) {
-						$value = call_user_func($filter, $store);
-					} else {
+				if (isset($filter)) {
+					$value = call_user_func($filter, $store);
+				} else {
+					if (isset($column) && isset($store->$column)) {
 						$value = $store->$column;
 					}
-				} elseif (!isset($column) && isset($filter)) {
-					// This is a virtual column which has been selected
-					// Its only value is from a filter
-					$value = call_user_func($filter, $store);
 				}
 
 				if (property_exists($entity, $property)) {

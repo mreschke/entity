@@ -453,6 +453,7 @@ abstract class Entity
 					// Value is empty, set to proper empty values
 					switch ($type) {
 						case "string":
+						case "json":
 							$value = $default ?: $nullable ? null : '';
 							break;
 						case "integer":
@@ -467,6 +468,10 @@ abstract class Entity
 					}
 
 				} else {
+
+					if ($type == 'json') {
+						$value = json_encode($value);
+					}
 
 					// If not multiline, strip carriage returns
 					if (!$multiline) {
