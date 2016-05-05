@@ -658,6 +658,9 @@ abstract class Store
 				$column = isset($options['column']) ? $options['column'] : null;
 				$filter = isset($options['filter']) ? $options['filter'] : null;
 
+				// Don't work on this column if its not even in the store (won't be if custom select)
+				if (!property_exists($store, $column)) continue;
+
 				if (isset($filter)) {
 					$value = call_user_func($filter, $store);
 				} else {
