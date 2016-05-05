@@ -658,17 +658,19 @@ abstract class Store
 				$column = isset($options['column']) ? $options['column'] : null;
 				$filter = isset($options['filter']) ? $options['filter'] : null;
 
-				// Don't work on this column if its not even in the store (won't be if custom select)
-				if (!property_exists($store, $column)) continue;
-
-				if (isset($filter)) {
-					$value = call_user_func($filter, $store);
-				} else {
-					if (isset($column) && isset($store->$column)) {
+				if (isset($column) && property_exists($store, $column)) {
+					// This is a database column which has been selected
+					// Its value is from the actual column or from a filter
+					if (isset($filter)) {
+						$value = call_user_func($filter, $store);
+					} else {
 						$value = $store->$column;
 					}
+				} elseif (!isset($column) && isset($filter)) {
+					// This is a virtual column which has been selected
+					// Its only value is from a filter
+					$value = call_user_func($filter, $store);
 				}
-
 				if (property_exists($entity, $property)) {
 					unset($unmappedKeys[$column]);
 					$entity->$property = $value;
