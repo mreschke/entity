@@ -748,6 +748,41 @@ abstract class Entity
 	}
 
 	/**
+	 * Lazy load a property with the given callback
+	 * @param  \Closire $callback
+	 * @return mixed
+	 */
+	public function lazyLoad($callback) {
+		// Entity is not even populated with data yet
+		if (!$this->isPopulated) return null;
+
+		// Property name is the calling function
+		$property = debug_backtrace()[1]['function'];
+
+		if (property_exists($this, $property)) {
+			// Already lazy loaded, just return the already gathered value
+			return $this->$property;
+		} else {
+			// Values not calculated yet.  Load it one time
+			$this->$property = call_user_func($callback);
+			return $this->$property;
+		}
+	}
+
+	/**
+	 * Check if this entity has been populated with data (vs an empty fresh instantiated entity)
+	 * @return boolean
+	 */
+	public function isPopulated()
+	{
+		$primary = $this->store->map($this->store->attributes('primary'), true);
+		if (isset($this->$primary)) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Get this instance
 	 * @return self
 	 */
