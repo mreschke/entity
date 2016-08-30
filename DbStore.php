@@ -34,9 +34,10 @@ abstract class DbStore extends Store implements StoreInterface
 
 	/**
 	 * Get all records for an entity
+	 * @param boolean $first = false use ->get() or ->first()
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function get()
+	public function get($first = false)
 	{
 		if (isset($this->join)) {
 			// Custom joins MUST also have custom custom columns or join collisions may occure
@@ -62,9 +63,13 @@ abstract class DbStore extends Store implements StoreInterface
 			return $this->mergeWiths();
 		}
 
-		return $this->transaction(function() {
+		return $this->transaction(function() use ($first) {
 			#dump($this->newQuery()->toSQL());
-			return $this->newQuery()->get();
+			if ($first) {
+				return $this->newQuery()->first();
+			} else {
+				return $this->newQuery()->get();
+			}
 		});
 	}
 
@@ -192,16 +197,17 @@ abstract class DbStore extends Store implements StoreInterface
 	{
 		if (isset($this->filter)) {
 			$likable = null;
+			$table = $this->attributes('table');
 			$map = $this->attributes('map');
 			foreach ($map as $property => $options) {
 				if (isset($options['column']) && isset($options['likable']) && $options['likable'] == true) {
-					$likable[] = $options['column'];
+					$likable[] = $table.".".$options['column'];
 				}
-			}
+			};
 			if (isset($likable)) {
 				$query->where(function($query) use($likable) {
 					foreach ($likable as $like) {
-						$query->orWhere($like, 'like', "%$this->filter%");
+						$query->orWhere($this->map($like), 'like', "%$this->filter%");
 					}
 				});
 			} else {

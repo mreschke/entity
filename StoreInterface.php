@@ -84,17 +84,18 @@ interface StoreInterface
 
 	/**
 	 * Get all records for an entity
+	 * @param boolean $first = false use ->get() or ->first()
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function get();
+	public function get($first = false);
 
 	/**
 	 * Get a key/value list
 	 * @param  string $column
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function lists($column, $key);
+	public function pluck($column, $key = null);
 
 	/**
 	 * Get a count of query records (null if error counting)

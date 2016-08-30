@@ -113,7 +113,7 @@ class ClientStore extends MongoStore
 	 */
 	protected function mergeAddress($clients)
 	{
-		$addresses = $this->manager->address->where('id', 'in', $clients->lists('addressID'))->get();
+		$addresses = $this->manager->address->where('id', 'in', $clients->pluck('addressID'))->get();
 		foreach ($clients as $client) {
 			$client->address = isset($addresses[$client->addressID]) ? $addresses[$client->addressID]: null;
 		}
@@ -125,7 +125,7 @@ class ClientStore extends MongoStore
 	 */
 	protected function mergeGroups($clients)
 	{
-		$groups = $this->manager->group->byClients($clients->lists('id'));
+		$groups = $this->manager->group->byClients($clients->pluck('id'));
 		foreach ($groups as $clientID => $group) {
 			$clients[$clientID]->groups = collect($group);
 		}
