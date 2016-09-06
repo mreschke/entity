@@ -50,9 +50,9 @@ $users = $this->vfi->user->all(); //or ->get() also works
 $users = $this->vfi->user->where('disabled', false)->get();
 $users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get();
 
-// Selects and lists
+// Selects and pluck
 $users = $this->vfi->user->select('id', 'name')->where('disabled', false)->all();
-$users = $this->vfi->user->select('id', 'name')->lists('name', 'id');
+$users = $this->vfi->user->select('id', 'name')->pluck('name', 'id');
 
 // Ordering records
 $users = $this->vfi->user->where('disabled', false)->orderBy('name')->all();

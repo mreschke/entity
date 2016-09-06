@@ -29,7 +29,7 @@ class ClientStore extends FakeClientStore
 	 */
 	protected function mergeInfo($clients)
 	{
-		$infos = $this->manager->clientInfo->where('clientID', 'in', $clients->lists('id'))->get();
+		$infos = $this->manager->clientInfo->where('clientID', 'in', $clients->pluck('id'))->get();
 		foreach ($infos as $clientID => $info) {
 			$clients[$clientID]->info = $info;
 		}

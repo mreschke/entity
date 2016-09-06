@@ -309,21 +309,19 @@ abstract class Store
 	 */
 	public function first()
 	{
-		$results = $this->get();
-		if (isset($results)) {
-			return $results->first();
-		}
+		$results = $this->get($first = true);
+		return $results;
 	}
 
 	/**
 	 * Get a key/value list
 	 * @param  string $column
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function lists($column, $key)
+	public function pluck($column, $key = null)
 	{
-		return $this->select($column, $key)->get()->lists($column, $key);
+		return $this->select($column, $key)->get()->pluck($column, $key);
 	}
 
 	/**
@@ -470,7 +468,7 @@ abstract class Store
 		$index = $index->get();
 		if (isset($index)) {
 			// Add where to entity query matching these found entityKeys
-			$this->where($primary, 'in', $index->lists('entityKey'));
+			$this->where($primary, 'in', $index->pluck('entityKey'));
 		} else {
 			// Want to return nothing, no attribute match, no entity return
 			$this->where($primary, null);
@@ -490,7 +488,7 @@ abstract class Store
 		// Attributes not available/enabled for this entity if store relationship not defined
 		if (is_null($this->properties('attributes'))) return;
 
-		$attributes = $this->manager()->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->lists($primary)->all())->get();
+		$attributes = $this->manager()->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->pluck($primary)->all())->get();
 		if (isset($attributes)) {
 			foreach ($attributes as $attribute) {
 				$entities[$attribute->entityKey]->attributes = json_decode($attribute->value, true);
@@ -647,7 +645,7 @@ abstract class Store
 	 */
 	protected function collect($results)
 	{
-		if (is_array($results)) {
+		if (is_array($results) || $results instanceof Collection) {
 			// Results is multi row
 			$entities = [];
 			foreach ($results as $result) {

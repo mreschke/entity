@@ -231,12 +231,12 @@ abstract class Entity
 	/**
 	 * Get a key/value list
 	 * @param  string $column
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function lists($column, $key)
+	public function pluck($column, $key = null)
 	{
-		return $this->store->lists($column, $key);
+		return $this->store->pluck($column, $key);
 	}
 
 	/**

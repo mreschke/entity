@@ -52,6 +52,7 @@ abstract class MssqlStore extends Store implements StoreInterface
 		// Get result
 		return $this->transaction(function() use($idColumn, $id) {
 			$query =  $this->newQuery()->where($idColumn, $id);
+			dd('broken here, not finished');
 			dump($query);
 			dd($query->first());
 		});
@@ -73,13 +74,17 @@ abstract class MssqlStore extends Store implements StoreInterface
 	/**
 	 * Get a key/value list
 	 * @param  string $column
-	 * @param  string $key
+	 * @param  string $key = null
 	 * @return \Illuminate\Support\Collection
 	 */
-	public function lists($column, $key)
+	public function pluck($column, $key = null)
 	{
 		return $this->transaction(function() use($column, $key) {
-			return collect($this->newQuery()->lists($this->map($column), $this->map($key)))->sort();
+			if (isset($key)) {
+				return collect($this->newQuery()->plyck($this->map($column), $this->map($key)))->sort();
+			} else {
+				return collect($this->newQuery()->plyck($this->map($column)))->sort();
+			}
 		}, false);
 	}
 
