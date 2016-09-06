@@ -1,5 +1,6 @@
 <?php namespace Mreschke\Repository;
 
+use DB;
 use stdClass;
 use Exception;
 use Illuminate\Database\ConnectionInterface;
@@ -108,6 +109,7 @@ abstract class DbStore extends Store implements StoreInterface
 		$this->addFilterQuery($query);
 		$this->addWhereQuery($query);
 		$this->addOrderByQuery($query);
+		$this->addGroupByQuery($query);
 		$this->addLimitQuery($query);
 		return $query;
 	}
@@ -163,8 +165,13 @@ abstract class DbStore extends Store implements StoreInterface
 				} else {
 					$selects[] = "$select as $item";
 				}
+
 			}
 		}
+
+		// Add withCount (count column)
+		if ($this->withCount) $selects[] = DB::raw('count(*) as count');
+
 		$query->select($selects ?: ['*']);
 
 		// Add distinct
@@ -261,6 +268,17 @@ abstract class DbStore extends Store implements StoreInterface
 				$query->orderBy($this->attributes('order_by'), $this->attributes('order_by_dir'));
 			}
 			// Else omit the order by statement completely which will use tables clustered index as order
+		}
+	}
+
+	/**
+	 * Add group by to query builder
+	 * @param Illuminate\Database\Query\Builder $query object is by reference
+	 */
+	protected function addGroupByQuery($query)
+	{
+		if (isset($this->groupBy)) {
+			$query->groupBy($this->groupBy);
 		}
 	}
 

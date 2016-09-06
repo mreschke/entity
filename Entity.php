@@ -147,6 +147,17 @@ abstract class Entity
 	}
 
 	/**
+	 * Add a groupBy column to the query
+	 * @param  string $column
+	 * @return $this
+	 */
+	public function groupBy($column)
+	{
+		$this->store->groupBy($column);
+		return $this;
+	}
+
+	/**
 	 * Add an offset and limit to the query
 	 * @param  integer $offset
 	 * @param  integer $limit
@@ -236,6 +247,17 @@ abstract class Entity
 	public function count($isTransaction = true)
 	{
 		return $this->store->count($isTransaction);
+	}
+
+	/**
+	 * Set the withCount statement to add a count to the select statement for the query
+	 * @param  boolean $withCount = true
+	 * @return $this
+	 */
+	public function withCount($withCount = true)
+	{
+		$this->store->withCount($withCount);
+		return $this;
 	}
 
 	/**

@@ -67,6 +67,18 @@ abstract class Store
 	 */
 	protected $orderBy;
 
+	/*
+	 * The groupBy column
+	 * @var array
+	 */
+	protected $groupBy;
+
+	/*
+	 * The withCount statement
+	 * @var array
+	 */
+	protected $withCount;
+
 	/**
 	 * The limit and offset
 	 * @var array
@@ -131,6 +143,17 @@ abstract class Store
 	}
 
 	/**
+	 * Set withCount statement
+	 * @param  boolean $withCount = true
+	 * @return $this
+	 */
+	public function withCount($withCount = true)
+	{
+		$this->withCount = $withCount;
+		return $this;
+	}
+
+	/**
 	 * Add additional select(s) to the query
 	 * @param  array
 	 * @return $this
@@ -191,6 +214,17 @@ abstract class Store
 			'column' => $this->map($column),
 			'direction' => $direction
 		];
+		return $this;
+	}
+
+	/**
+	 * Set the groupBy column
+	 * @param  string $column
+	 * @return $this
+	 */
+	public function groupBy($column)
+	{
+		$this->groupBy = $this->map($column);
 		return $this;
 	}
 
