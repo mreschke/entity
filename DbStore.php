@@ -284,7 +284,9 @@ abstract class DbStore extends Store implements StoreInterface
 	protected function addGroupByQuery($query)
 	{
 		if (isset($this->groupBy)) {
-			$query->groupBy($this->groupBy);
+			foreach ($this->groupBy as $groupBy) {
+				$query->groupBy($groupBy);
+			}
 		}
 	}
 
@@ -312,10 +314,12 @@ abstract class DbStore extends Store implements StoreInterface
 		$entities = $this->transaction(function() {
 
 			// Include each subentity join method
-			foreach ($this->with as $with) {
-				$method = 'join'.studly_case($with);
-				if (method_exists($this, $method)) {
-					$this->$method();
+			if (isset($this->with)) {
+				foreach ($this->with as $with) {
+					$method = 'join'.studly_case($with);
+					if (method_exists($this, $method)) {
+						$this->$method();
+					}
 				}
 			}
 
@@ -329,10 +333,12 @@ abstract class DbStore extends Store implements StoreInterface
 		$results = null;
 		if (isset($entities)) {
 			// Run new subentity query and merge with main query
-			foreach ($this->with as $with) {
-				$method = 'merge'.studly_case($with);
-				if (method_exists($this, $method)) {
-					$this->$method($entities);
+			if (isset($this->with)) {
+				foreach ($this->with as $with) {
+					$method = 'merge'.studly_case($with);
+					if (method_exists($this, $method)) {
+						$this->$method($entities);
+					}
 				}
 			}
 

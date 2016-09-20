@@ -224,7 +224,7 @@ abstract class Store
 	 */
 	public function groupBy($column)
 	{
-		$this->groupBy = $this->map($column);
+		$this->groupBy[] = $this->map($column);
 		return $this;
 	}
 
@@ -844,7 +844,10 @@ abstract class Store
 		$this->where = null;
 		$this->filter = null;
 		$this->orderBy = null;
+		$this->groupBy = null;
+		$this->withCount = null;
 		$this->limit = null;
+		$this->with = null;
 	}
 
 	/**

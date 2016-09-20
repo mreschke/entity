@@ -381,3 +381,49 @@ $user = $this->vfi->user->where('firstName', 'Matthew')->first()
 ```
 
 Of course, since your entities are just plan old PHP objects, you can add any other methods or properties you choose as helpers.  Like if you wanted a `byName` helper, just add it to your entity
+
+
+
+
+# Dev Notes
+
+## HTTP Store
+
+If I build an HTTP JSON store, what would the URL's look like for full query builder usage?
+
+Since this is public HTTP API, I need to always know context, like WHO is the logged in user
+that is querying the API.  Becuase if they call users/179 I need to know the calling $user 
+actually has access to user 179 etc...  In PHP based library this is not a problem
+becuase I am the once calling the API.  But if HTTP, then anyone can call it
+
+all()
+http://iam/user
+http://iam/user/byUser(179)
+http://iam/user/managersByDealer(5975)
+
+where()
+http://iam/user/where('disabled',true)
+http://iam/user/where('disabled',true)/where('id','>',100)
+
+order()
+http://iam/user/orderBy('id')
+http://iam/user/where('disabled',true)/orderBy('id')
+
+find()
+http://iam/user/179
+http://iam/client/byExtract(4345)
+http://iam/client/whereHostname('bgmo')/orderBy('id')
+
+Methods
+http://iam/user/179/types
+http://iam/user/179/apps
+http://iam/user/179/hasPerm('admin')
+http://iam/user/179/isEmployee
+http://iam/client/accessibleBy(179)
+
+Relationships
+http://iam/client/179/with('host','address')
+http://iam/client/179/host
+http://iam/client/179/address
+
+
