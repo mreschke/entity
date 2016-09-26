@@ -847,7 +847,7 @@ abstract class Store
 		$this->groupBy = null;
 		$this->withCount = null;
 		$this->limit = null;
-		$this->with = null;
+		//do NOT reset ->with here
 	}
 
 	/**
