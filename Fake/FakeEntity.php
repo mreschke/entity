@@ -12,13 +12,12 @@ use Mreschke\Repository\Entity;
 abstract class FakeEntity extends Entity
 {
 
-	/**
-	 * Get the repository manager
-	 * @return object
-	 */
-	protected function fake()
-	{
-		return $this->manager();
-	}
-
+    /**
+     * Get the repository manager
+     * @return object
+     */
+    protected function fake()
+    {
+        return $this->manager();
+    }
 }

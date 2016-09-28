@@ -10,30 +10,30 @@ use Mreschke\Repository\MongoStore;
  */
 class ProductStore extends MongoStore
 {
-	/**
-	 * Initialize Store
-	 * @return void
-	 */
-	protected function init() {
-		$this->attributes = [
-			'entity' => 'product',
-			'table' => 'ProductTable',
-			'primary' => '_id',
-			'increments' => true,
-			'map' => [
-				'id' => ['column' => '_id'],
-				'name' => ['column' => 'Name'],
-				'price' => ['column' => 'Price'],
-				'disabled' => ['column' => 'Disabled', 'filter' => function($store) {
-					return (boolean) $store->Disabled;
-				}],
+    /**
+     * Initialize Store
+     * @return void
+     */
+    protected function init()
+    {
+        $this->attributes = [
+            'entity' => 'product',
+            'table' => 'ProductTable',
+            'primary' => '_id',
+            'increments' => true,
+            'map' => [
+                'id' => ['column' => '_id'],
+                'name' => ['column' => 'Name'],
+                'price' => ['column' => 'Price'],
+                'disabled' => ['column' => 'Disabled', 'filter' => function ($store) {
+                    return (boolean) $store->Disabled;
+                }],
 
-				// Relationships
-				#'address' => ['entity' => 'address', 'table' => 'AddressTable'],
-				#'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
+                // Relationships
+                #'address' => ['entity' => 'address', 'table' => 'AddressTable'],
+                #'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
 
-			]
-		];
-	}
-
+            ]
+        ];
+    }
 }

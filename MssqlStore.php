@@ -4,7 +4,6 @@ use stdClass;
 use Illuminate\Database\ConnectionInterface;
 use Mreschke\Dbal\Mssql;
 
-
 // This is under construction and does NOT work yet
 // this will be for mreschke/dbal store
 // For now I just use laravel db even while connecting to mssql
@@ -18,168 +17,167 @@ use Mreschke\Dbal\Mssql;
 abstract class MssqlStore extends Store implements StoreInterface
 {
 
-	/**
-	 * The database connection instance
-	 * @var \Mreschke\Dbal\Mssql
-	 */
-	protected $connection;
+    /**
+     * The database connection instance
+     * @var \Mreschke\Dbal\Mssql
+     */
+    protected $connection;
 
-	/**
-	 * Create a new instance of this store
-	 * @param ConnectionInterface $connection
-	 */
-	public function __construct($manager, $storeKey, Mssql $connection)
-	{
-		$this->manager = $manager;
-		$this->storeKey = $storeKey;
-		$this->connection = $connection;
+    /**
+     * Create a new instance of this store
+     * @param ConnectionInterface $connection
+     */
+    public function __construct($manager, $storeKey, Mssql $connection)
+    {
+        $this->manager = $manager;
+        $this->storeKey = $storeKey;
+        $this->connection = $connection;
 
-		// Initialize store
-		$this->init();
-	}
+        // Initialize store
+        $this->init();
+    }
 
-	/**
-	 * Find a record by id or key
-	 * @param  mixed $id
-	 * @return object
-	 */
-	public function find($id)
-	{
-		// Determine ID Columns
-		$idColumn = $this->attributes('primary');
-		if (!is_numeric($id)) $idColumn = 'key';
+    /**
+     * Find a record by id or key
+     * @param  mixed $id
+     * @return object
+     */
+    public function find($id)
+    {
+        // Determine ID Columns
+        $idColumn = $this->attributes('primary');
+        if (!is_numeric($id)) {
+            $idColumn = 'key';
+        }
 
-		// Get result
-		return $this->transaction(function() use($idColumn, $id) {
-			$query =  $this->newQuery()->where($idColumn, $id);
-			dd('broken here, not finished');
-			dump($query);
-			dd($query->first());
-		});
-	}
+        // Get result
+        return $this->transaction(function () use ($idColumn,$id) {
+            $query =  $this->newQuery()->where($idColumn, $id);
+            dd('broken here, not finished');
+            dump($query);
+            dd($query->first());
+        });
+    }
 
 
-	/**
-	 * Get all records for an entity
-	 * @return \Illuminate\Support\Collection
-	 */
-	public function all()
-	{
-		// Get results
-		return $this->transaction(function() {
-			return $this->newQuery()->get();
-		});
-	}
+    /**
+     * Get all records for an entity
+     * @return \Illuminate\Support\Collection
+     */
+    public function all()
+    {
+        // Get results
+        return $this->transaction(function () {
+            return $this->newQuery()->get();
+        });
+    }
 
-	/**
-	 * Get a key/value list
-	 * @param  string $column
-	 * @param  string $key = null
-	 * @return \Illuminate\Support\Collection
-	 */
-	public function pluck($column, $key = null)
-	{
-		return $this->transaction(function() use($column, $key) {
-			if (isset($key)) {
-				return collect($this->newQuery()->plyck($this->map($column), $this->map($key)))->sort();
-			} else {
-				return collect($this->newQuery()->plyck($this->map($column)))->sort();
-			}
-		}, false);
-	}
+    /**
+     * Get a key/value list
+     * @param  string $column
+     * @param  string $key = null
+     * @return \Illuminate\Support\Collection
+     */
+    public function pluck($column, $key = null)
+    {
+        return $this->transaction(function () use ($column,$key) {
+            if (isset($key)) {
+                return collect($this->newQuery()->plyck($this->map($column), $this->map($key)))->sort();
+            } else {
+                return collect($this->newQuery()->plyck($this->map($column)))->sort();
+            }
+        }, false);
+    }
 
-	/**
-	 * Get a count of query records
-	 * @return integer
-	 */
-	public function count()
-	{
-		return $this->newQuery()->count();
-	}
+    /**
+     * Get a count of query records
+     * @return integer
+     */
+    public function count()
+    {
+        return $this->newQuery()->count();
+    }
 
-	/**
-	 * Start a new query builder
-	 * @return \Illuminate\Database\Query\Builder
-	 */
-	protected function newQuery()
-	{
-		$columns = $this->select ?: ['*'];
-		$query = $this->table()->select($columns);
-		if (isset($this->where)) {
-			foreach ($this->where as $where) {
-				$query->where($where['column'], $where['operator'], $where['value']);
-			}
-		}
+    /**
+     * Start a new query builder
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function newQuery()
+    {
+        $columns = $this->select ?: ['*'];
+        $query = $this->table()->select($columns);
+        if (isset($this->where)) {
+            foreach ($this->where as $where) {
+                $query->where($where['column'], $where['operator'], $where['value']);
+            }
+        }
 
-		// orderBy
-		if (isset($this->orderBy)) {
-			$query->orderBy($this->orderBy['column'], $this->orderBy['direction']);
-		}
+        // orderBy
+        if (isset($this->orderBy)) {
+            $query->orderBy($this->orderBy['column'], $this->orderBy['direction']);
+        }
 
-		// limit/offset
-		if (isset($this->limit)) {
-			$query->skip($this->limit['skip'])->take($this->limit['take']);
-		}
+        // limit/offset
+        if (isset($this->limit)) {
+            $query->skip($this->limit['skip'])->take($this->limit['take']);
+        }
 
-		return $query;
-	}
+        return $query;
+    }
 
-	/**
-	 * Save one or multiple entity objects
-	 * @param  array|object $entities
-	 * @return array|object
-	 */
-	public function save($entities)
-	{
-		if (is_array($entities)) {
+    /**
+     * Save one or multiple entity objects
+     * @param  array|object $entities
+     * @return array|object
+     */
+    public function save($entities)
+    {
+        if (is_array($entities)) {
 
-			// Save bulk records
-			$records = [];
-			foreach ($entities as $entity) {
-				$records[] = $this->transformEntity($entity);
-			}
-			$this->table()->insert($records);
+            // Save bulk records
+            $records = [];
+            foreach ($entities as $entity) {
+                $records[] = $this->transformEntity($entity);
+            }
+            $this->table()->insert($records);
+        } else {
 
-		} else {
+            // Save a single record
+            $record = $this->transformEntity($entities);
 
-			// Save a single record
-			$record = $this->transformEntity($entities);
+            // Get Store attributes
+            $primary = $this->attributes('primary');
+            $increments = $this->attributes('increments');
 
-			// Get Store attributes
-			$primary = $this->attributes('primary');
-			$increments = $this->attributes('increments');
+            // Query handle
+            $handle = $this->table()->where($primary, $entities->$primary);
 
-			// Query handle
-			$handle = $this->table()->where($primary, $entities->$primary);
+            if (is_null($handle->first())) {
+                if ($increments) {
+                    $entities->$primary = $this->table()->insertGetId($record);
+                } else {
+                    $this->table()->insert($record);
+                }
+            } else {
+                $handle->update($record);
+            }
+        }
+        return $entities;
+    }
 
-			if (is_null($handle->first())) {
-				if ($increments) {
-					$entities->$primary = $this->table()->insertGetId($record);
-				} else {
-					$this->table()->insert($record);
-				}
-			} else {
-				$handle->update($record);
-			}
+    public function delete()
+    {
+        // ?????????????????
+    }
 
-		}
-		return $entities;
-	}
-
-	public function delete()
-	{
-		// ?????????????????
-	}
-
-	/**
-	 * Truncate all records
-	 * @return void
-	 */
-	public function truncate()
-	{
-		$this->connection->statement("SET foreign_key_checks=0");
-		$this->table()->truncate();
-		$this->connection->statement("SET foreign_key_checks=1");
-	}
-
+    /**
+     * Truncate all records
+     * @return void
+     */
+    public function truncate()
+    {
+        $this->connection->statement("SET foreign_key_checks=0");
+        $this->table()->truncate();
+        $this->connection->statement("SET foreign_key_checks=1");
+    }
 }

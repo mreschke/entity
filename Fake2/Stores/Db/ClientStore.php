@@ -10,29 +10,29 @@ use Mreschke\Repository\Fake\Stores\Db\ClientStore as FakeClientStore;
  */
 class ClientStore extends FakeClientStore
 {
-	/**
-	 * Initialize Store
-	 * @return void
-	 */
-	protected function init() {
-		parent::init();
-		#$this->attributes['map']['feeds'] = [
-		#	'entity' => 'feed', 'table' => 'feeds'
-		#];
-		#$this->attributes['map']['feeds'] = ['table' => 'feeds'];
-		#$this->attributes['map']['clientFeed'] = ['table' => 'client_feeds'];
-	}
+    /**
+     * Initialize Store
+     * @return void
+     */
+    protected function init()
+    {
+        parent::init();
+        #$this->attributes['map']['feeds'] = [
+        #    'entity' => 'feed', 'table' => 'feeds'
+        #];
+        #$this->attributes['map']['feeds'] = ['table' => 'feeds'];
+        #$this->attributes['map']['clientFeed'] = ['table' => 'client_feeds'];
+    }
 
-	/**
-	 * Merge client info subentity
-	 * @param  \Illuminate\Support\Collection $clients
-	 */
-	protected function mergeInfo($clients)
-	{
-		$infos = $this->manager->clientInfo->where('clientID', 'in', $clients->pluck('id'))->get();
-		foreach ($infos as $clientID => $info) {
-			$clients[$clientID]->info = $info;
-		}
-	}
-
+    /**
+     * Merge client info subentity
+     * @param  \Illuminate\Support\Collection $clients
+     */
+    protected function mergeInfo($clients)
+    {
+        $infos = $this->manager->clientInfo->where('clientID', 'in', $clients->pluck('id'))->get();
+        foreach ($infos as $clientID => $info) {
+            $clients[$clientID]->info = $info;
+        }
+    }
 }

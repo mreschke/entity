@@ -93,7 +93,7 @@ echo $user->address->state; //lazy query happens here
 // Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
 $users = $this->vfi->user->all();
 foreach ($users as $user) {
-	echo $user->address->state; //lazy query happens here
+    echo $user->address->state; //lazy query happens here
 }
 
 // Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
@@ -138,7 +138,7 @@ echo $user->attributes('some-attribute'); //lazy query happens here
 // Lazy loaded in a loop...careful, this is where it gets inefficient as its one query per entity
 $users = $this->vfi->user->all();
 foreach ($users as $user) {
-	echo $user->attributes('some-attribute'); //lazy query happens here
+    echo $user->attributes('some-attribute'); //lazy query happens here
 }
 
 // Eager loaded using ->with().  Far more efficient if you need it on multiple objects.
@@ -161,7 +161,7 @@ $this->vfi->user->find(1234)->forgetAttribute('some-attribute');
 // There is no way to delete all attributes other than looping them all manually
 $user = $this->vfi->user->find(1234)->with('attributes');
 foreach ($user->attributes as $attribute) {
-	$user->forgetAttribute($attribute)
+    $user->forgetAttribute($attribute)
 }
 ```
 
@@ -174,11 +174,11 @@ Before you insert new entities into the database you can run your array through 
 <?php
 $newEntities = 'this is an array of your items you want to insert';
 foreach ($newEntities as $entity) {
-	// Format entities first
-	$entity->format();
+    // Format entities first
+    $entity->format();
 
-	// Save to backend
-	$entity->save();
+    // Save to backend
+    $entity->save();
 }
 ```
 
@@ -210,16 +210,16 @@ $this->vfi->roItem->delete($ros);
 $ros = $this->vfi->roItem->where('techNum', 903)->get();
 $tmp = [];
 foreach ($ros as $ro) {
-	$tmp[] = (array) $ro;
+    $tmp[] = (array) $ro;
 }
 $this->vfi->roItem->delete($ros);
 
 // Multiple array of arrays manually
 // Results in query: DELETE FROM table WHERE IN (1,2,3,...)
 $this->vfi->roItem->delete([
-	['id' => 1],
-	['id' => 2],
-	['id' => 3]
+    ['id' => 1],
+    ['id' => 2],
+    ['id' => 3]
 ]);
 
 // Trying to delete * should fail in case we messed up the query builder
@@ -245,8 +245,8 @@ $this->vfi->client->update($client);
 // Update same column(s) on bulk records based on ->where
 // This is a query builder level update and the most efficient!
 $clients = $this->vfi->client
-	->where('disabled', true)
-	->update(['name' => 'DISABLED', 'date' => date()]);
+    ->where('disabled', true)
+    ->update(['name' => 'DISABLED', 'date' => date()]);
 
 ```
 
@@ -320,8 +320,8 @@ and mongo is cheap, you can delete the fake*-repository database if needed.
 
 Seed once...test anytime
 
-	Fake/Database/create
-	./test
+    Fake/Database/create
+    ./test
 
 
 
@@ -340,35 +340,35 @@ Most people like the idea of having a repository layer just in case they ever de
 
 So if your database looks like this
 
-	Table: tblContacts
-	---------------
-	contact_id
-	first_name
-	last_name
-	email
+    Table: tblContacts
+    ---------------
+    contact_id
+    first_name
+    last_name
+    email
 
-	Table: tblAddresses
-	-------------------
-	address_id
-	address
-	zip_code
+    Table: tblAddresses
+    -------------------
+    address_id
+    address
+    zip_code
 
 You can build perfectly mapped (translated) entities that look like this
 
-	// We don't want to use the word contacts or tblContacts, we want to use 'users'
-	// And we don't want first_name, we want firstName...thus the entity mapper
-	var_dump( $this->vfi->user->find(1)->with('address') )
-	Mreschke\Vfi\User {
-		id: 1
-		firstName: "Matthew"
-		lastName: "Reschke"
-		email: "mail@mreschke.com"
-		address: {
-			id: "3212"
-			address: "Some address"
-			zip: 75067
-		}
-	}
+    // We don't want to use the word contacts or tblContacts, we want to use 'users'
+    // And we don't want first_name, we want firstName...thus the entity mapper
+    var_dump( $this->vfi->user->find(1)->with('address') )
+    Mreschke\Vfi\User {
+        id: 1
+        firstName: "Matthew"
+        lastName: "Reschke"
+        email: "mail@mreschke.com"
+        address: {
+            id: "3212"
+            address: "Some address"
+            zip: 75067
+        }
+    }
 
 These now perfeclty mapped entities also act like plain old PHP objects.  Meaning you can var_dump() or dd() or dump() them in PHP and get very nice looking results, instead of like Eloquent or Query builder where you get a million other Laravel properites along with it.  *This gives you clean dumps, which are a huge benifit!*
 

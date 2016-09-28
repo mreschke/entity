@@ -10,9 +10,8 @@ use App;
  */
 class Product extends Fake2Entity
 {
-	public $id;                // Actual db column
-	public $name;              // Actual db column
-	public $price;             // Actual db column
-	public $disabled;          // Actual db column
-
+    public $id;                // Actual db column
+    public $name;              // Actual db column
+    public $price;             // Actual db column
+    public $disabled;          // Actual db column
 }

@@ -10,25 +10,25 @@ use Mreschke\Repository\DbStore;
  */
 class AddressStore extends DbStore
 {
-	/**
-	 * Initialize Store
-	 * @return void
-	 */
-	protected function init() {
-		$this->attributes = [
-			'entity' => 'address',
-			'table' => 'AddressTable',
-			'primary' => 'ID',
-			'increments' => true,
-			'map' => [
-				'id' => ['column' => 'ID'],
-				'address' => ['column' => 'Address'],
-				'city' => ['column' => 'City'],
-				'state' => ['column' => 'State'],
-				'zip' => ['column' => 'Zip'],
-				'note' => ['column' => 'Note'],
-			]
-		];
-	}
-
+    /**
+     * Initialize Store
+     * @return void
+     */
+    protected function init()
+    {
+        $this->attributes = [
+            'entity' => 'address',
+            'table' => 'AddressTable',
+            'primary' => 'ID',
+            'increments' => true,
+            'map' => [
+                'id' => ['column' => 'ID'],
+                'address' => ['column' => 'Address'],
+                'city' => ['column' => 'City'],
+                'state' => ['column' => 'State'],
+                'zip' => ['column' => 'Zip'],
+                'note' => ['column' => 'Note'],
+            ]
+        ];
+    }
 }

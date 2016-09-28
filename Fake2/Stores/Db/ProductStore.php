@@ -10,30 +10,30 @@ use Mreschke\Repository\DbStore;
  */
 class ProductStore extends DbStore
 {
-	/**
-	 * Initialize Store
-	 * @return void
-	 */
-	protected function init() {
-		$this->attributes = [
-			'entity' => 'product',
-			'table' => 'ProductTable',
-			'primary' => 'ID',
-			'increments' => true,
-			'map' => [
-				'id' => ['column' => 'ID'],
-				'name' => ['column' => 'Name'],
-				'price' => ['column' => 'Price'],
-				'disabled' => ['column' => 'Disabled', 'filter' => function($store) {
-					return (boolean) $store->Disabled;
-				}],
+    /**
+     * Initialize Store
+     * @return void
+     */
+    protected function init()
+    {
+        $this->attributes = [
+            'entity' => 'product',
+            'table' => 'ProductTable',
+            'primary' => 'ID',
+            'increments' => true,
+            'map' => [
+                'id' => ['column' => 'ID'],
+                'name' => ['column' => 'Name'],
+                'price' => ['column' => 'Price'],
+                'disabled' => ['column' => 'Disabled', 'filter' => function ($store) {
+                    return (boolean) $store->Disabled;
+                }],
 
-				// Relationships
-				#'address' => ['entity' => 'address', 'table' => 'AddressTable'],
-				#'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
+                // Relationships
+                #'address' => ['entity' => 'address', 'table' => 'AddressTable'],
+                #'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
 
-			]
-		];
-	}
-
+            ]
+        ];
+    }
 }

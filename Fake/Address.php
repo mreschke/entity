@@ -10,11 +10,10 @@ use App;
  */
 class Address extends FakeEntity
 {
-	public $id;                // Actual db column
-	public $address;           // Actual db column
-	public $city;              // Actual db column
-	public $state;             // Actual db column
-	public $zip;               // Actual db column
-	public $note;              // Actual db column
-
+    public $id;                // Actual db column
+    public $address;           // Actual db column
+    public $city;              // Actual db column
+    public $state;             // Actual db column
+    public $zip;               // Actual db column
+    public $note;              // Actual db column
 }

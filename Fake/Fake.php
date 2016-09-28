@@ -11,16 +11,15 @@ use Mreschke\Repository\Manager;
  */
 class Fake extends Manager
 {
-	/**
-	 * Base namespace
-	 * @var string
-	 */
-	protected $namespace = 'Mreschke\\Repository\\Fake';
+    /**
+     * Base namespace
+     * @var string
+     */
+    protected $namespace = 'Mreschke\\Repository\\Fake';
 
-	/**
-	 * Base config key
-	 * @var string
-	 */
-	protected $configKey = 'mreschke.repository.fake';
-
+    /**
+     * Base config key
+     * @var string
+     */
+    protected $configKey = 'mreschke.repository.fake';
 }

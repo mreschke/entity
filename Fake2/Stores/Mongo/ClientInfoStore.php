@@ -10,29 +10,29 @@ use Mreschke\Repository\MongoStore;
  */
 class ClientInfoStore extends MongoStore
 {
-	/**
-	 * Initialize Store
-	 * @return void
-	 */
-	protected function init() {
-		$this->attributes = [
-			'entity' => 'clientInfo',
-			'table' => 'ClientInfoTable',
-			'primary' => 'ClientID',
-			'increments' => false,
-			'indexes' => [
-				['key' => 'clientID', 'options' => ['unique' => false]]
-			],
-			'map' => [
-				'clientID' => ['column' => 'ClientID'],
-				'region' => ['column' => 'Region'],
-				'saleDate' => ['column' => 'SaleDate'],
+    /**
+     * Initialize Store
+     * @return void
+     */
+    protected function init()
+    {
+        $this->attributes = [
+            'entity' => 'clientInfo',
+            'table' => 'ClientInfoTable',
+            'primary' => 'ClientID',
+            'increments' => false,
+            'indexes' => [
+                ['key' => 'clientID', 'options' => ['unique' => false]]
+            ],
+            'map' => [
+                'clientID' => ['column' => 'ClientID'],
+                'region' => ['column' => 'Region'],
+                'saleDate' => ['column' => 'SaleDate'],
 
-				// Relationships
-				#'address' => ['entity' => 'address', 'table' => 'AddressTable'],
-				#'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
-			]
-		];
-	}
-
+                // Relationships
+                #'address' => ['entity' => 'address', 'table' => 'AddressTable'],
+                #'groups' => ['entity' => 'group', 'table' => 'GroupTAble'],
+            ]
+        ];
+    }
 }
