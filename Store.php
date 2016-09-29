@@ -327,7 +327,8 @@ abstract class Store
      */
     public function pluck($column, $key = null)
     {
-        return $this->select($column, $key)->get()->pluck($column, $key);
+        $results = $this->select($column, $key)->get();
+        if (isset($results)) return $results->pluck($column, $key);
     }
 
     /**
