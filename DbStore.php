@@ -82,6 +82,11 @@ abstract class DbStore extends Store implements StoreInterface
     public function count($isTransaction = true)
     {
         try {
+            // You cannot COUNT at the same time you order_by or SQL errors with
+            // Column "tbl_user.email" is invalid in the ORDER BY clause because it is not contained in either an aggregate function or the GROUP BY clause.
+            // So CLEAR the default order_by before ->count()...to bypass auto-add in the ->addOrderByQuery() method
+            unset($this->attributes['order_by']);
+
             if ($isTransaction) {
                 // Clear query builder after running counts (a terminating ->count() method like ->get())
                 $filteredRecords = $this->transaction(function () {
