@@ -10,7 +10,7 @@ use App;
  */
 class ClientInfo extends Fake2Entity
 {
-    public $clientID;          // Actual db column
-    public $region;            // Actual db column
-    public $saleDate;          // Actual db column
+    public $clientID;
+    public $region;
+    public $saleDate;
 }

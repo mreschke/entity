@@ -10,9 +10,9 @@ use App;
  */
 class Attribute extends FakeEntity
 {
-    public $key;                // Actual db column
-    public $entity;             // Actual db column
-    public $entityID;           // Actual db column
-    public $index;              // Actual db column
-    public $value;              // Actual db column
+    public $key;
+    public $entity;
+    public $entityID;
+    public $index;
+    public $value;
 }

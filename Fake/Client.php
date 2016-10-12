@@ -10,12 +10,12 @@ use App;
  */
 class Client extends FakeEntity
 {
-    public $id;                // Actual db column
-    public $guid;              // Actual db column
-    public $name;              // Actual db column
-    public $addressID;         // Actual db column
-    public $note;              // Actual db column
-    public $disabled = false;  // Actual db column
+    public $id;
+    public $guid;
+    public $name;
+    public $addressID;
+    public $note;
+    public $disabled = false;
 
     /**
      * Join address entity

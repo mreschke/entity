@@ -258,6 +258,11 @@ $clients = $this->vfi->client
 This section explains how to setup `mreschke/repository`.  How you can use this system for your own entities.
 
 
+**FIXME: This section is NOT written yet.**  For now, you can look around in the
+`Fake` and `Fake2` folders as those are 2 repositories used for testing.
+
+
+
 
 
 
@@ -330,12 +335,12 @@ Seed once...test anytime
 <a name="why"></a>
 # Why Was this Written
 
-*fixme* not complete
+**FIXME:** This is NOT complete
 
 
 Back in 2015 repositories were all the range in the Laravel community.  Their benefits were obvious but their implementation was verbose, cumbersome and not as easy to "query build" like eloquent.
 
-Most people like the idea of having a repository layer just in case they ever decide to swap out the backend.  The problem for most people is that engineering for the future of backend changes is often a waste of time and considered over engineering.  This wasn't true for my case as I was currently in the middle of re-writing all of my software from MSSQL into MySQL and MongoDB.  This was a 5 year chess game and required some apps to run with legacy MSSQL backend while others would run with new MySQL backends.   These backend were temporary and moving and migrating monthly during this transition phase. This meant I was forced to think "API first".  In other words, I didn't need to care where my data currently was and where it was going to end up.  All I needed to think about was how I wanted to interact with my data in an ideal world.  The repository pattern allowed me to build beautiful APIs into my data even though the backend was MSSQL garbage.  Instead of legacy columns like `users_first_name` I could map that to simply `$user->name`, something eloquent does not provide.  
+Most people like the idea of having a repository layer just in case they ever decide to swap out the backend.  The problem for most people is that engineering for the future of backend changes is often a waste of time and considered over engineering.  This wasn't true for my case as I was currently in the middle of re-writing all of my software from MSSQL into MySQL and MongoDB.  This was a 5 year chess game and required some apps to run with legacy MSSQL backend while others would run with new MySQL backends.   These backend were temporary and moving and migrating monthly during this transition phase. This meant I was forced to think "API first".  In other words, I didn't need to care where my data currently was and where it was going to end up.  All I needed to think about was how I wanted to interact with my data in an ideal world.  The repository pattern allowed me to build beautiful APIs into my data even though the backend was MSSQL garbage.  Instead of legacy columns like `users_first_name` I could map that to simply `$user->name`, something eloquent does not provide.
 
 
 So if your database looks like this
@@ -392,7 +397,7 @@ Of course, since your entities are just plan old PHP objects, you can add any ot
 If I build an HTTP JSON store, what would the URL's look like for full query builder usage?
 
 Since this is public HTTP API, I need to always know context, like WHO is the logged in user
-that is querying the API.  Becuase if they call users/179 I need to know the calling $user 
+that is querying the API.  Becuase if they call users/179 I need to know the calling $user
 actually has access to user 179 etc...  In PHP based library this is not a problem
 becuase I am the once calling the API.  But if HTTP, then anyone can call it
 
