@@ -40,41 +40,14 @@ abstract class DbStore extends Store implements StoreInterface
      */
     public function get($first = false)
     {
-        if (isset($this->join)) {
-            // Custom joins MUST also have custom custom columns or join collisions may occure
-            if (isset($this->select)) {
-                $results = $this->transaction(function () use ($first) {
-                    if ($first) {
-                        return collect([$this->newQuery()->first()]);
-                    } else {
-                        return $this->newQuery()->get();
-                    }
-                });
+        // This is a ->join query
+        if (isset($this->join)) return $this->mergeJoins($first);
 
-                // Unflatten collection (from address.city into address->city)
-                $results = $this->expandCollection(collect($results));
+        // This is a ->with query
+        if (isset($this->with)) return $this->mergeWiths($first);
 
-                // Key by primary
-                // This does happen in transaction(), but expandCollection removes the keyBy
-                if ($first) {
-                    return $this->keyByPrimary($results)->first();
-                } else {
-                    return $this->keyByPrimary($results);
-                }
-
-            } else {
-                throw new Exception("Must specify a custom select when using joins");
-            }
-            return null;
-        }
-
-        if (isset($this->with)) {
-            // Custom ->get function
-            return $this->mergeWiths($first);
-        }
-
+        // This is a simple query
         return $this->transaction(function () use ($first) {
-            #dump($this->newQuery()->toSQL());
             if ($first) {
                 return $this->newQuery()->first();
             } else {
@@ -381,6 +354,40 @@ abstract class DbStore extends Store implements StoreInterface
         } else {
             return $results;
         }
+    }
+
+    /**
+     * Handle all join queries
+     * @param boolean $first = false
+     * @return \Illuminate\Support\Collection
+     */
+    protected function mergeJoins($first)
+    {
+        // Custom joins MUST also have custom custom columns or join collisions may occure
+        if (isset($this->select)) {
+            $results = $this->transaction(function () use ($first) {
+                if ($first) {
+                    return collect([$this->newQuery()->first()]);
+                } else {
+                    return $this->newQuery()->get();
+                }
+            });
+
+            // Unflatten collection (from address.city into address->city)
+            $results = $this->expandCollection(collect($results));
+
+            // Key by primary
+            // This does happen in transaction(), but expandCollection removes the keyBy
+            if ($first) {
+                return $this->keyByPrimary($results)->first();
+            } else {
+                return $this->keyByPrimary($results);
+            }
+
+        } else {
+            throw new Exception("Must specify a custom select when using joins");
+        }
+        return null;
     }
 
     /**
