@@ -43,8 +43,12 @@ abstract class DbStore extends Store implements StoreInterface
         if (isset($this->join)) {
             // Custom joins MUST also have custom custom columns or join collisions may occure
             if (isset($this->select)) {
-                $results = $this->transaction(function () {
-                    return $this->newQuery()->get();
+                $results = $this->transaction(function () use ($first) {
+                    if ($first) {
+                        return collect([$this->newQuery()->first()]);
+                    } else {
+                        return $this->newQuery()->get();
+                    }
                 });
 
                 // Unflatten collection (from address.city into address->city)
@@ -52,7 +56,12 @@ abstract class DbStore extends Store implements StoreInterface
 
                 // Key by primary
                 // This does happen in transaction(), but expandCollection removes the keyBy
-                return $this->keyByPrimary($results);
+                if ($first) {
+                    return $this->keyByPrimary($results)->first();
+                } else {
+                    return $this->keyByPrimary($results);
+                }
+
             } else {
                 throw new Exception("Must specify a custom select when using joins");
             }
