@@ -41,10 +41,10 @@ abstract class DbStore extends Store implements StoreInterface
     public function get($first = false)
     {
         // This is a ->join query
-        if (isset($this->join)) return $this->mergeJoins($first);
+        if (isset($this->join)) return $this->getJoinResults($first);
 
         // This is a ->with query
-        if (isset($this->with)) return $this->mergeWiths($first);
+        if (isset($this->with)) return $this->getWithResults($first);
 
         // This is a simple query
         return $this->transaction(function () use ($first) {
@@ -54,6 +54,105 @@ abstract class DbStore extends Store implements StoreInterface
                 return $this->newQuery()->get();
             }
         });
+    }
+
+    /**
+     * Handle query using with
+     * @param boolean $first = false
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getWithResults($first = false)
+    {
+        // Save off and reset select before newQuery()
+        $select = $this->select;
+        $this->select = null;
+
+        // Run query with joins and wheres to get final initial base result
+        $entities = $this->transaction(function () use ($first) {
+
+            // Include each subentity join method (if exists)
+            // Yes, even ->with() will call joinXyz AND mergeXyz if joinXyz exists
+            if (isset($this->with)) {
+                foreach ($this->with as $with) {
+                    $method = 'join'.studly_case($with);
+                    if (method_exists($this, $method)) {
+                        $this->$method();
+                    }
+                }
+            }
+
+            // Run query with any new joins
+            $query = $this->newQuery();
+
+            // Select only main table or ids and duplicated columns between joins will collide
+            $query->select($this->attributes('table').'.*');
+
+            if ($first) {
+                // If $first=true we can utilize database level ->first() BUT we still
+                // must return as collection for now, as merge methods below expect it
+                return collect([$query->first()]);
+            } else {
+                return $query->get();
+            }
+        });
+
+        $results = null;
+        if (isset($entities)) {
+            // Run new subentity query and merge with main query
+            if (isset($this->with)) {
+                foreach ($this->with as $with) {
+                    $method = 'merge'.studly_case($with);
+                    if (method_exists($this, $method)) {
+                        $this->$method($entities);
+                    }
+                }
+            }
+
+            // Select columns from collection (post query)
+            $results = $this->selectCollection($entities, $this->map($select, true));
+        }
+        $this->with = null;
+
+        // We applied ->first() at database level for optimization, but we had
+        // to still return a collection for merge methods above...now we can ->first on the collection
+        if ($first) {
+            return $results->first();
+        } else {
+            return $results;
+        }
+    }
+
+    /**
+     * Handle query using joins
+     * @param boolean $first = false
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getJoinResults($first)
+    {
+        // Custom joins MUST also have custom custom columns or join collisions may occure
+        if (isset($this->select)) {
+            $results = $this->transaction(function () use ($first) {
+                if ($first) {
+                    return collect([$this->newQuery()->first()]);
+                } else {
+                    return $this->newQuery()->get();
+                }
+            });
+
+            // Unflatten collection (from address.city into address->city)
+            $results = $this->expandCollection(collect($results));
+
+            // Key by primary
+            // This does happen in transaction(), but expandCollection removes the keyBy
+            if ($first) {
+                return $this->keyByPrimary($results)->first();
+            } else {
+                return $this->keyByPrimary($results);
+            }
+
+        } else {
+            throw new Exception("Must specify a custom select when using joins");
+        }
     }
 
     /**
@@ -288,106 +387,6 @@ abstract class DbStore extends Store implements StoreInterface
         if (isset($this->limit)) {
             $query->skip($this->limit['skip'])->take($this->limit['take']);
         }
-    }
-
-    /**
-     * Handle all bulk with merges
-     * @param boolean $first = false
-     * @return \Illuminate\Support\Collection
-     */
-    protected function mergeWiths($first = false)
-    {
-        // Save off and reset select before newQuery()
-        $select = $this->select;
-        $this->select = null;
-
-        // Run query with joins and wheres to get final initial base result
-        $entities = $this->transaction(function () use ($first) {
-
-            // Include each subentity join method (if exists)
-            // Yes, even ->with() will call joinXyz AND mergeXyz if joinXyz exists
-            if (isset($this->with)) {
-                foreach ($this->with as $with) {
-                    $method = 'join'.studly_case($with);
-                    if (method_exists($this, $method)) {
-                        $this->$method();
-                    }
-                }
-            }
-
-            // Run query with any new joins
-            $query = $this->newQuery();
-
-            // Select only main table or ids and duplicated columns between joins will collide
-            $query->select($this->attributes('table').'.*');
-
-            if ($first) {
-                // If $first=true we can utilize database level ->first() BUT we still
-                // must return as collection for now, as merge methods below expect it
-                return collect([$query->first()]);
-            } else {
-                return $query->get();
-            }
-        });
-
-        $results = null;
-        if (isset($entities)) {
-            // Run new subentity query and merge with main query
-            if (isset($this->with)) {
-                foreach ($this->with as $with) {
-                    $method = 'merge'.studly_case($with);
-                    if (method_exists($this, $method)) {
-                        $this->$method($entities);
-                    }
-                }
-            }
-
-            // Select columns from collection (post query)
-            $results = $this->selectCollection($entities, $this->map($select, true));
-        }
-        $this->with = null;
-
-        // We applied ->first() at database level for optimization, but we had
-        // to still return a collection for merge methods above...now we can ->first on the collection
-        if ($first) {
-            return $results->first();
-        } else {
-            return $results;
-        }
-    }
-
-    /**
-     * Handle all join queries
-     * @param boolean $first = false
-     * @return \Illuminate\Support\Collection
-     */
-    protected function mergeJoins($first)
-    {
-        // Custom joins MUST also have custom custom columns or join collisions may occure
-        if (isset($this->select)) {
-            $results = $this->transaction(function () use ($first) {
-                if ($first) {
-                    return collect([$this->newQuery()->first()]);
-                } else {
-                    return $this->newQuery()->get();
-                }
-            });
-
-            // Unflatten collection (from address.city into address->city)
-            $results = $this->expandCollection(collect($results));
-
-            // Key by primary
-            // This does happen in transaction(), but expandCollection removes the keyBy
-            if ($first) {
-                return $this->keyByPrimary($results)->first();
-            } else {
-                return $this->keyByPrimary($results);
-            }
-
-        } else {
-            throw new Exception("Must specify a custom select when using joins");
-        }
-        return null;
     }
 
     /**
