@@ -866,7 +866,7 @@ abstract class Store
         $this->groupBy = null;
         $this->withCount = null;
         $this->limit = null;
-        //do NOT reset ->with here
+        //do NOT reset ->with here, we do it in mergeWiths properly
     }
 
     /**

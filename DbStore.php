@@ -61,7 +61,7 @@ abstract class DbStore extends Store implements StoreInterface
 
         if (isset($this->with)) {
             // Custom ->get function
-            return $this->mergeWiths();
+            return $this->mergeWiths($first);
         }
 
         return $this->transaction(function () use ($first) {
@@ -310,18 +310,20 @@ abstract class DbStore extends Store implements StoreInterface
 
     /**
      * Handle all bulk with merges
+     * @param boolean $first = false
      * @return \Illuminate\Support\Collection
      */
-    protected function mergeWiths()
+    protected function mergeWiths($first = false)
     {
         // Save off and reset select before newQuery()
         $select = $this->select;
         $this->select = null;
 
         // Run query with joins and wheres to get final initial base result
-        $entities = $this->transaction(function () {
+        $entities = $this->transaction(function () use ($first) {
 
-            // Include each subentity join method
+            // Include each subentity join method (if exists)
+            // Yes, even ->with() will call joinXyz AND mergeXyz if joinXyz exists
             if (isset($this->with)) {
                 foreach ($this->with as $with) {
                     $method = 'join'.studly_case($with);
@@ -335,7 +337,15 @@ abstract class DbStore extends Store implements StoreInterface
             $query = $this->newQuery();
 
             // Select only main table or ids and duplicated columns between joins will collide
-            return $query->select($this->attributes('table').'.*')->get();
+            $query->select($this->attributes('table').'.*');
+
+            if ($first) {
+                // If $first=true we can utilize database level ->first() BUT we still
+                // must return as collection for now, as merge methods below expect it
+                return collect([$query->first()]);
+            } else {
+                return $query->get();
+            }
         });
 
         $results = null;
@@ -354,7 +364,14 @@ abstract class DbStore extends Store implements StoreInterface
             $results = $this->selectCollection($entities, $this->map($select, true));
         }
         $this->with = null;
-        return $results;
+
+        // We applied ->first() at database level for optimization, but we had
+        // to still return a collection for merge methods above...now we can ->first on the collection
+        if ($first) {
+            return $results->first();
+        } else {
+            return $results;
+        }
     }
 
     /**
