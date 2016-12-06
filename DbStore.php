@@ -400,31 +400,60 @@ abstract class DbStore extends Store implements StoreInterface
             return false;
         }
 
+        // Get Store attributes
+        $primaryColumn = $this->attributes('primary');
+        $primary = $this->map($primaryColumn, true); // entity ID, NOT db column
+        $increments = $this->attributes('increments');
+
         if (is_array($entities)) {
 
             // Save bulk records
             $records = [];
             foreach ($entities as $entity) {
+                // If $primary is null, remove it so auto-increment will work in PostgreSQL
+                if (!isset($entity->$primary) || ($increments && $entity->$primary == 0)) {
+                    unset($entity->$primary);
+                }
                 $records[] = $this->transformEntity($entity);
             }
+
             if ($this->fireEvent('creating', $entities) === false) {
                 return false;
             }
+
             $this->table()->insert($records);
             $this->fireEvent('created', $entities);
         } else {
 
+            // If $primary is null, remove it so auto-increment will work in PostgreSQL
+            if (!isset($entities->$primary) || ($increments && $entities->$primary == 0)) {
+                unset($entities->$primary);
+            }
+
             // Save a single record
             $record = $this->transformEntity($entities);
 
-            // Get Store attributes
-            $primary = $this->attributes('primary');
-            $increments = $this->attributes('increments');
-
             if (isset($primary)) {
-                // Smart insert or update based on primary key selection
-                $handle = $this->table()->where($primary, $entities->$primary);
-                if (is_null($handle->first())) {
+                $found = false;
+                if (isset($entities->$primary)) {
+                    // Smart insert or update based on primary key selection
+                    $handle = $this->table()->where($primaryColumn, $entities->$primary);
+                    $found = !is_null($handle->first());
+                }
+
+                if ($found) {
+                    // Updating an existing record
+                    if ($this->fireEvent('updating', $entities) === false) {
+                        return false;
+                    }
+                    // Remove primary for proper update statement
+                    unset($record[$primaryColumn]);
+
+                    // Update record
+                    $handle->update($record);
+                    $this->fireEvent('updated', $entities);
+
+                } else {
                     // Insert a new record
                     if ($this->fireEvent('creating', $entities) === false) {
                         return false;
@@ -435,13 +464,6 @@ abstract class DbStore extends Store implements StoreInterface
                         $this->table()->insert($record);
                     }
                     $this->fireEvent('created', $entities);
-                } else {
-                    // Updating an existing record
-                    if ($this->fireEvent('updating', $entities) === false) {
-                        return false;
-                    }
-                    $handle->update($record);
-                    $this->fireEvent('updated', $entities);
                 }
             } else {
                 // Table has no primary (probably a linkage table)

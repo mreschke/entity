@@ -474,7 +474,8 @@ abstract class Entity
                 $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
 
                 $value = $this->$property;
-                if (!$value) {
+                // I use $value == '' instead of !value so a 0 will be seen as a valid value
+                if ($value == '') {
                     // Value is empty, set to proper empty values
                     switch ($type) {
                         case "string":

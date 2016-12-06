@@ -31,6 +31,14 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         // Mrcore Module Tracking
         Module::trace(get_class(), __function__);
+
+        // Debug listener
+        /*\DB::listen(function ($query) {
+            dump($query->sql, $query->bindings);
+            // $query->sql
+            // $query->bindings
+            // $query->time
+        });*/
     }
 
     /**
