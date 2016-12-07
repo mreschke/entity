@@ -411,8 +411,10 @@ abstract class DbStore extends Store implements StoreInterface
             $records = [];
             foreach ($entities as $entity) {
                 // If $primary is null, remove it so auto-increment will work in PostgreSQL
-                if (!isset($entity->$primary) || ($increments && $entity->$primary == 0)) {
-                    unset($entity->$primary);
+                if (isset($primary)) {
+                    if (!isset($entity->$primary) || ($increments && $entity->$primary == 0)) {
+                        unset($entity->$primary);
+                    }
                 }
                 $records[] = $this->transformEntity($entity);
             }
@@ -426,8 +428,10 @@ abstract class DbStore extends Store implements StoreInterface
         } else {
 
             // If $primary is null, remove it so auto-increment will work in PostgreSQL
-            if (!isset($entities->$primary) || ($increments && $entities->$primary == 0)) {
-                unset($entities->$primary);
+            if (isset($primary)) {
+                if (!isset($entities->$primary) || ($increments && $entities->$primary == 0)) {
+                    unset($entities->$primary);
+                }
             }
 
             // Save a single record
