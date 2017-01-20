@@ -476,18 +476,19 @@ abstract class Entity
                 $value = $this->$property;
 
                 // Handle EMPTY ('' values, 0 is NOT included as blank)
-                    // I use !is_numeric && $value == '' instead of !value so a 0 will be seen as a valid value
+                // I use !is_numeric && $value == '' instead of !value so a 0 will be seen as a valid value
+                // This also fires when $value = null
                 if (!is_numeric($value) && $value == '') {
                     switch ($type) {
                         case "string":
                         case "json":
-                            $value = $default ?: $nullable ? null : '';
+                            $value = $default ?: ($nullable ? null : '');
                             break;
                         case "integer":
-                            $value = $default ?: $nullable ? null : 0;
+                            $value = $default ?: ($nullable ? null : 0);
                             break;
                         case "decimal":
-                            $value = $default ?: $nullable ? null : 0.0;
+                            $value = $default ?: ($nullable ? null : 0.0);
                             break;
                         case "boolean":
                             $value = $default ?: false;
