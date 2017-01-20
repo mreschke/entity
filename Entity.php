@@ -474,9 +474,10 @@ abstract class Entity
                 $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
 
                 $value = $this->$property;
-                // I use $value == '' instead of !value so a 0 will be seen as a valid value
-                if ($value == '') {
-                    // Value is empty, set to proper empty values
+
+                // Handle EMPTY ('' values, 0 is NOT included as blank)
+                    // I use !is_numeric && $value == '' instead of !value so a 0 will be seen as a valid value
+                if (!is_numeric($value) && $value == '') {
                     switch ($type) {
                         case "string":
                         case "json":
