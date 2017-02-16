@@ -491,7 +491,7 @@ abstract class Entity
                             $value = $default ?: ($nullable ? null : 0.0);
                             break;
                         case "boolean":
-                            $value = $default ?: false;
+                            $value = $default ?: ($nullable ? null : false);
                             break;
                     }
                 } else {
