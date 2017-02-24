@@ -833,7 +833,7 @@ abstract class Entity
 
     /**
      * Remove all subentities from this $entity
-     * Goes well with (clone $entiti)->simplify() to create a second simplified object
+     * Goes well with ( $entity)->simplify() or ->duplicate()->simplify() to create a second simplified object
      * @return object
      */
     public function simplify()
