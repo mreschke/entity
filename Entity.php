@@ -825,14 +825,15 @@ abstract class Entity
      * Clone this entire entity object
      * @return object
      */
-    public function clone()
+    public function duplicate()
     {
+        // Would have named function 'clone', but it's reserved in PHP < 7.0
         return clone $this;
     }
 
     /**
      * Remove all subentities from this $entity
-     * Goes well with ->clone()->simplify() to create a second simplified object
+     * Goes well with (clone $entiti)->simplify() to create a second simplified object
      * @return object
      */
     public function simplify()
