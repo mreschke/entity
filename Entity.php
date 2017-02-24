@@ -822,6 +822,30 @@ abstract class Entity
     }
 
     /**
+     * Clone this entire entity object
+     * @return object
+     */
+    public function clone()
+    {
+        return clone $this;
+    }
+
+    /**
+     * Remove all subentities from this $entity
+     * Goes well with ->clone()->simplify() to create a second simplified object
+     * @return object
+     */
+    public function simplify()
+    {
+        foreach ($this as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                unset($this->$key);
+            }
+        }
+        return $this;
+    }
+
+    /**
      * Get this instance
      * @return self
      */
