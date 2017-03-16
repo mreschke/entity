@@ -473,12 +473,28 @@ abstract class Entity
                 $multiline = isset($options['multiline']) ? $options['multiline'] : false;
                 $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
 
+                // Get properties value
                 $value = $this->$property;
 
-                // Handle EMPTY ('' values, 0 is NOT included as blank)
-                // I use !is_numeric && $value == '' instead of !value so a 0 will be seen as a valid value
-                // This also fires when $value = null
-                if (!is_numeric($value) && $value == '') {
+                // Determine empty string
+                // Logic differs for numerics, booleans, null or empty strings
+                $empty = false;
+                if (is_numeric($value)) {
+                    // Numerics are never empty, even 0
+                    $empty = false;
+                } elseif ($value === false) {
+                    // False booleans are not empty
+                    $empty = false;
+                } elseif (!isset($value)) {
+                    // Null string are empty
+                    $empty = true;
+                } elseif ($value == '') {
+                    // Empty strings are empty
+                    $empty = true;
+                }
+
+                // Handle EMPTY values
+                if ($empty) {
                     switch ($type) {
                         case "string":
                         case "json":
