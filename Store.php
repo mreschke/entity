@@ -703,6 +703,7 @@ abstract class Store
             $unmappedKeys = get_object_vars($store);
             foreach ($map as $property => $options) {
                 $value = null;
+                $type = isset($options['type']) ? $options['type'] : null;
                 $column = isset($options['column']) ? $options['column'] : null;
                 $filter = isset($options['filter']) ? $options['filter'] : null;
 
@@ -721,6 +722,15 @@ abstract class Store
                 }
                 if (property_exists($entity, $property)) {
                     unset($unmappedKeys[$column]);
+
+                    // Convert decimal PDO values to floats
+                    if ($type == 'decimal') {
+                        // PHP PDO returns decimals as double quoted "strings".  We don't want that, convert to float
+                        // Check if null, can have nullable decimals and don't want to (float) those
+                        if (isset($value)) {
+                            $value = (float) $value;
+                        }
+                    }
                     $entity->$property = $value;
                 }
             }

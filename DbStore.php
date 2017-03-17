@@ -3,6 +3,7 @@
 use DB;
 use stdClass;
 use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Database\ConnectionInterface;
 
 /**
@@ -88,9 +89,15 @@ abstract class DbStore extends Store implements StoreInterface
             $query->select($this->attributes('table').'.*');
 
             if ($first) {
+
                 // If $first=true we can utilize database level ->first() BUT we still
                 // must return as collection for now, as merge methods below expect it
-                return collect([$query->first()]);
+                $results = $query->first();
+                if (isset($results)) {
+                    return collect([$results]);
+                } else {
+                    return $results;
+                }
             } else {
                 return $query->get();
             }
@@ -115,7 +122,7 @@ abstract class DbStore extends Store implements StoreInterface
 
         // We applied ->first() at database level for optimization, but we had
         // to still return a collection for merge methods above...now we can ->first on the collection
-        if ($first) {
+        if ($first && isset($results)) {
             return $results->first();
         } else {
             return $results;
