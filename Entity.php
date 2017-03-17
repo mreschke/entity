@@ -841,8 +841,9 @@ abstract class Entity
      * Clone this entire entity object
      * @return object
      */
-    public function clone()
+    public function duplicate()
     {
+        // Would have named function 'clone', but it's reserved in PHP < 7.0
         return clone $this;
     }
 
