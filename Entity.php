@@ -509,6 +509,8 @@ abstract class Entity
                         case "boolean":
                             $value = $default ?: ($nullable ? null : false);
                             break;
+                        default:
+                            $value = $default ?: ($nullable ? null : '');
                     }
                 } else {
                     if ($type == 'json') {
