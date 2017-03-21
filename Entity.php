@@ -498,6 +498,8 @@ abstract class Entity
                     switch ($type) {
                         case "string":
                         case "json":
+                        case "date":
+                        case "datetime":
                             $value = $default ?: ($nullable ? null : '');
                             break;
                         case "integer":
@@ -509,6 +511,8 @@ abstract class Entity
                         case "boolean":
                             $value = $default ?: ($nullable ? null : false);
                             break;
+                        default:
+                            $value = $default ?: ($nullable ? null : '');
                     }
                 } else {
                     if ($type == 'json') {
