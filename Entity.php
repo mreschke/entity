@@ -458,126 +458,133 @@ abstract class Entity
     {
         $map = $this->store->properties();
         foreach ($map as $property => $options) {
-            $type = isset($options['type']) ? $options['type'] : null;
-            if (isset($type)) {
 
-                // Get options and defaults
-                $size = isset($options['size']) ? $options['size'] : null;
-                $round = isset($options['round']) ? $options['round'] : null;
-                $nullable = isset($options['nullable']) ? $options['nullable'] : false;
-                $default = isset($options['default']) ? $options['default'] : null;
-                $trim = isset($options['trim']) ? $options['trim'] : true;
-                $ucwords = isset($options['ucwords']) ? $options['ucwords'] : false;
-                $lowercase = isset($options['lowercase']) ? $options['lowercase'] : false;
-                $uppercase = isset($options['uppercase']) ? $options['uppercase'] : false;
-                $multiline = isset($options['multiline']) ? $options['multiline'] : false;
-                $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
+            // No property type, no formatter
+            if (!isset($options['type'])) continue;
 
-                // Get properties value
-                $value = $this->$property;
+            // Get options and defaults
+            $type = $options['type'];
+            $size = isset($options['size']) ? $options['size'] : null;
+            $round = isset($options['round']) ? $options['round'] : null;
+            $nullable = isset($options['nullable']) ? $options['nullable'] : false;
+            $default = isset($options['default']) ? $options['default'] : null;
+            $trim = isset($options['trim']) ? $options['trim'] : true;
+            $ucwords = isset($options['ucwords']) ? $options['ucwords'] : false;
+            $lowercase = isset($options['lowercase']) ? $options['lowercase'] : false;
+            $uppercase = isset($options['uppercase']) ? $options['uppercase'] : false;
+            $multiline = isset($options['multiline']) ? $options['multiline'] : false;
+            $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
 
-                // Determine empty string
-                // Logic differs for numerics, booleans, null or empty strings
+            // Get properties value
+            $value = $this->$property;
+
+            // Determine empty string
+            // Logic differs for numerics, booleans, null or empty strings
+            $empty = false;
+            if (is_numeric($value)) {
+                // Numerics are never empty, even 0
                 $empty = false;
-                if (is_numeric($value)) {
-                    // Numerics are never empty, even 0
-                    $empty = false;
-                } elseif ($value === false) {
-                    // False booleans are not empty
-                    $empty = false;
-                } elseif (!isset($value)) {
-                    // Null string are empty
-                    $empty = true;
-                } elseif ($value == '') {
-                    // Empty strings are empty
-                    $empty = true;
-                }
-
-                // Handle EMPTY values
-                if ($empty) {
-                    switch ($type) {
-                        case "string":
-                        case "json":
-                        case "date":
-                        case "datetime":
-                            $value = $default ?: ($nullable ? null : '');
-                            break;
-                        case "integer":
-                            $value = $default ?: ($nullable ? null : 0);
-                            break;
-                        case "decimal":
-                            $value = $default ?: ($nullable ? null : 0.0);
-                            break;
-                        case "boolean":
-                            $value = $default ?: ($nullable ? null : false);
-                            break;
-                        default:
-                            $value = $default ?: ($nullable ? null : '');
-                    }
-                } else {
-                    if ($type == 'json') {
-                        $value = json_encode($value);
-                    }
-
-                    // If not multiline, strip carriage returns
-                    if (!$multiline) {
-                        $value = strtr($value, ["\r\n"=>" ", "\n"=>" ", "\r"=>" "]);
-                    }
-
-                    // Don't allow UTF-8
-                    if (!$utf8) {
-                        $encoding = mb_detect_encoding($value);
-                        if ($encoding != "ASCII") {
-                            #$value = utf8_encode($value);
-                            $value = Str::toAscii($value);
-                        }
-                    }
-
-                    // Trim if true (default=true)
-                    if ($trim) {
-                        $value = trim($value);
-                    }
-
-                    switch ($type) {
-                        case "string":
-                            if ($lowercase) {
-                                $value = strtolower($value);
-                            }
-                            if ($uppercase) {
-                                $value = strtoupper($value);
-                            }
-                            if ($ucwords) {
-                                $value = ucwords(strtolower($value));
-                            }
-                            break;
-                        case "integer":
-                            $value = (int) $value;
-                            break;
-                        case "decimal":
-                            if (isset($size)) {
-                                // Add one to offset the decimal point in calculations
-                                $options['size'] ++;
-                                $size ++;
-                            }
-                            if (isset($round)) {
-                                $value = round((float) $value, $round);
-                            } else {
-                                $value = (float) $value;
-                            }
-                            break;
-                        case "boolean":
-                            $value = (bool) $value;
-                            break;
-                    }
-
-                    if (isset($size) && strlen($value) > $size) {
-                        // Column size overflow
-                        $this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
-                        $value = substr($value, 0, $size);
-                    }
-                }
-                $this->$property = $value;
+            } elseif ($value === false) {
+                // False booleans are not empty
+                $empty = false;
+            } elseif (!isset($value)) {
+                // Null string are empty
+                $empty = true;
+            } elseif ($value == '') {
+                // Empty strings are empty
+                $empty = true;
             }
+
+            // Handle EMPTY values
+            if ($empty) {
+                switch ($type) {
+                    case "string":
+                    case "json":
+                    case "date":
+                    case "datetime":
+                        $value = $default ?: ($nullable ? null : '');
+                        break;
+                    case "integer":
+                        $value = $default ?: ($nullable ? null : 0);
+                        break;
+                    case "decimal":
+                        $value = $default ?: ($nullable ? null : 0.0);
+                        break;
+                    case "boolean":
+                        $value = $default ?: ($nullable ? null : false);
+                        break;
+                    default:
+                        $value = $default ?: ($nullable ? null : '');
+                }
+            } else {
+                if ($type == 'json') {
+                    $value = json_encode($value);
+                }
+
+                // If not multiline, strip carriage returns
+                if (!$multiline) {
+                    $value = strtr($value, ["\r\n"=>" ", "\n"=>" ", "\r"=>" "]);
+                }
+
+                // Don't allow UTF-8
+                if (!$utf8) {
+                    $encoding = mb_detect_encoding($value);
+                    if ($encoding != "ASCII") {
+                        #$value = utf8_encode($value);
+                        $value = Str::toAscii($value);
+                    }
+                }
+
+                // Trim if true (default=true)
+                if ($trim) {
+                    $value = trim($value);
+                }
+
+                switch ($type) {
+                    case "string":
+                        if ($lowercase) {
+                            $value = strtolower($value);
+                        }
+                        if ($uppercase) {
+                            $value = strtoupper($value);
+                        }
+                        if ($ucwords) {
+                            $value = ucwords(strtolower($value));
+                        }
+                        break;
+                    case "datetime":
+                        $value = date("Y-m-d H:i:s", strtotime($value));
+                        break;
+                    case "date":
+                        $value = date("Y-m-d", strtotime($value));
+                        break;
+                    case "integer":
+                        $value = (int) $value;
+                        break;
+                    case "decimal":
+                        if (isset($size)) {
+                            // Add one to offset the decimal point in calculations
+                            $options['size'] ++;
+                            $size ++;
+                        }
+                        if (isset($round)) {
+                            $value = round((float) $value, $round);
+                        } else {
+                            $value = (float) $value;
+                        }
+                        break;
+                    case "boolean":
+                        $value = (bool) $value;
+                        break;
+                }
+
+                if (isset($size) && strlen($value) > $size) {
+                    // Column size overflow
+                    $this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
+                    $value = substr($value, 0, $size);
+                }
+            }
+            $this->$property = $value;
         }
     }
 
