@@ -901,6 +901,15 @@ abstract class Store
     }
 
     /**
+     * Get store notes
+     * @return mixed
+     */
+    public function notes()
+    {
+        return $this->notes;
+    }
+
+    /**
      * Get one or all store map properties and options
      * @param  string $property = null
      * @param  string $option = null

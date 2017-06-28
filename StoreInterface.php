@@ -154,4 +154,10 @@ interface StoreInterface
      * @return mixed
      */
     public function attributes($key = null);
+
+    /**
+     * Get store notes
+     * @return mixed
+     */
+    public function notes();
 }

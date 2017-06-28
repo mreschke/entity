@@ -1,6 +1,7 @@
 <?php namespace Mreschke\Repository;
 
 use Event;
+use Carbon;
 use Mreschke\Helpers\Str;
 
 /**
@@ -403,6 +404,101 @@ abstract class Entity
         } else {
             $this->forgetAttribute($key);
         }
+    }
+
+    /**
+     * Get the notes for an entity
+     * @return mixed
+     */
+    public function notes()
+    {
+        $primary = $this->store->map($this->store->attributes('primary'), true);
+        $entity = $this->store->attributes('entity');
+        $entityKey = $this->$primary;
+
+        // Not working on individual entity
+        if (is_null($entityKey) || is_null($this->store->properties('attributes'))) {
+            return null;
+        }
+
+        // Get all notes
+        if (!isset($this->notes)) {
+            $this->notes = null;
+            $items = $this->manager->note->where('entity', $entity)->where('entityKey', $entityKey)->get();
+            if (isset($items)) {
+                $this->notes = $items;
+            }
+        }
+        return @$this->notes;
+    }
+
+    /**
+     * Add a note to the entity
+     * @param string $subject
+     * @param string $text
+     * @param integer $userID
+     * @return void
+     */
+    public function addNote($subject, $text, $userID)
+    {
+        $primary = $this->store->map($this->store->attributes('primary'), true);
+        $entity = $this->store->attributes('entity');
+        $entityKey = $this->$primary;
+
+        // Create a new note
+        $this->manager->note->create([
+            'entity' => $entity,
+            'entityKey' => $entityKey,
+            'subject' => $subject,
+            'note' => $text,
+            'creator' => $userID,
+            'created' => Carbon\Carbon::now()
+        ]);
+    }
+
+    /**
+     * Update an existing note on an entity
+     * @param  integer $id
+     * @param  string $subject
+     * @param  string $text
+     * @param  integer $userID
+     * @return void
+     */
+    public function updateNote($id, $subject, $text, $userID)
+    {
+        $primary = $this->store->map($this->store->attributes('primary'), true);
+        $entity = $this->store->attributes('entity');
+        $entityKey = $this->$primary;
+
+        $note = $this->manager->note->find($id);
+
+        if (!isset($note)) {
+            return null;
+        }
+
+        $note->subject = $subject;
+        $note->note = $text;
+        $note->updator = $userID;
+        $note->updated = Carbon\Carbon::now();
+        $note->save();
+    }
+
+    /**
+     * Delete a note from an entity
+     * @param  integer $id
+     * @return mixed
+     */
+    public function forgetNote($id)
+    {
+        $primary = $this->store->map($this->store->attributes('primary'), true);
+        $entity = $this->store->attributes('entity');
+        $entityKey = $this->$primary;
+
+        $this->manager->note->where('entity', $entity)->where('entityKey', $entityKey)->where('id', $id)->delete();
+
+        // Refresh notes
+        unset($this->notes);
+        $this->notes();
     }
 
     /**
