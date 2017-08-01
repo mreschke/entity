@@ -1,7 +1,7 @@
 <?php namespace Mreschke\Repository;
 
 use Event;
-use Carbon;
+use Carbon\Carbon;
 use Mreschke\Helpers\Str;
 
 /**
@@ -452,7 +452,7 @@ abstract class Entity
             'subject' => $subject,
             'note' => $text,
             'creator' => $userID,
-            'created' => Carbon\Carbon::now()
+            'created' => Carbon::now()
         ]);
     }
 
@@ -479,7 +479,7 @@ abstract class Entity
         $note->subject = $subject;
         $note->note = $text;
         $note->updator = $userID;
-        $note->updated = Carbon\Carbon::now();
+        $note->updated = Carbon::now();
         $note->save();
     }
 
