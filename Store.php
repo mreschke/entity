@@ -465,8 +465,9 @@ abstract class Store
      */
     public function whereAttribute($column, $value = null)
     {
+        // Attributes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->getKeyBy();
         $entity = $this->attributes('entity');
-        $primary = $this->map($this->attributes('primary'), true);
 
         // Query attribute index
         if (isset($value)) {
@@ -481,10 +482,10 @@ abstract class Store
         $index = $index->get();
         if (isset($index)) {
             // Add where to entity query matching these found entityKeys
-            $this->where($primary, 'in', $index->pluck('entityKey'));
+            $this->where($keyBy, 'in', $index->pluck('entityKey'));
         } else {
             // Want to return nothing, no attribute match, no entity return
-            $this->where($primary, null);
+            $this->where($keyBy, null);
         }
         return $this;
     }
@@ -495,15 +496,14 @@ abstract class Store
      */
     protected function mergeAttributes($entities)
     {
-        $primary = $this->map($this->attributes('primary'), true);
+        // Attributes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->getKeyBy();
         $entity = $this->attributes('entity');
 
         // Attributes not available/enabled for this entity if store relationship not defined
-        if (is_null($this->properties('attributes'))) {
-            return;
-        }
+        if (is_null($this->properties('attributes'))) return;
 
-        $attributes = $this->manager()->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->pluck($primary)->all())->get();
+        $attributes = $this->manager()->attribute->where('entity', $entity)->where('entityKey', 'in', $entities->pluck($keyBy)->all())->get();
         if (isset($attributes)) {
             foreach ($attributes as $attribute) {
                 $entities[$attribute->entityKey]->attributes = json_decode($attribute->value, true);
@@ -646,7 +646,6 @@ abstract class Store
         // Collect Results
         if ($collect && isset($results)) {
             $results = $this->collect($results);
-            ;
         }
 
         // Reset transaction defaults
@@ -848,11 +847,7 @@ abstract class Store
     protected function keyByPrimary($entities)
     {
         if (count($entities) > 0) {
-            $keyBy = $this->attributes('key_by');
-            if (!isset($keyBy)) {
-                // Custom key_by not set, key by primary
-                $keyBy = $this->map($this->attributes('primary'), true);
-            }
+            $keyBy = $this->getKeyBy();
             if (property_exists($entities[0], $keyBy)) {
                 // Re-key assoc array by primary
                 return collect($entities)->keyBy($keyBy);
@@ -898,6 +893,18 @@ abstract class Store
             // Return individual attribute
             return $this->attributes[$key];
         }
+    }
+
+    /**
+     * Get keyBy property (not column name)
+     * Keyby is primary unless key_by override exists
+     * @return
+     */
+    public function getKeyBy()
+    {
+        // Keyby is primary unless key_by override exists
+        // key_by value is the entity property, NOT the column name like 'primary' is, so do NOT ->map it
+        return $this->attributes('key_by') ?: $this->map($this->attributes('primary'), true);
     }
 
     /**

@@ -269,9 +269,10 @@ abstract class Entity
      */
     public function attributes($key = null, $value = null)
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Attributes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         // Not working on individual entity
         if (is_null($entityKey) || is_null($this->store->properties('attributes'))) {
@@ -353,9 +354,10 @@ abstract class Entity
      */
     public function forgetAttribute($key)
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Attributes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         // Deleting a key
         $value = $this->attributes($key);
@@ -412,9 +414,10 @@ abstract class Entity
      */
     public function notes()
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Notes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         // Not working on individual entity
         if (is_null($entityKey) || is_null($this->store->properties('attributes'))) {
@@ -441,9 +444,10 @@ abstract class Entity
      */
     public function addNote($subject, $text, $userID)
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Notes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         // Create a new note
         $this->manager->note->create([
@@ -466,9 +470,10 @@ abstract class Entity
      */
     public function updateNote($id, $subject, $text, $userID)
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Notes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         $note = $this->manager->note->find($id);
 
@@ -490,9 +495,10 @@ abstract class Entity
      */
     public function forgetNote($id)
     {
-        $primary = $this->store->map($this->store->attributes('primary'), true);
+        // Notes "entity_key" is primary OR key_by override if defined, must use this->getKeyBy()
+        $keyBy = $this->store->getKeyBy();
         $entity = $this->store->attributes('entity');
-        $entityKey = $this->$primary;
+        $entityKey = $this->$keyBy;
 
         $this->manager->note->where('entity', $entity)->where('entityKey', $entityKey)->where('id', $id)->delete();
 
