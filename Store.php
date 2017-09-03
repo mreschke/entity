@@ -683,6 +683,10 @@ abstract class Store
     protected function transformStore($store)
     {
         if (isset($store)) {
+
+            // If scalar from min, max, avg aggregates, just return that value
+            if (is_string($store) || is_numeric($store)) return $store;
+
             if (isset($this->select)) {
                 // Using custom select, cannot return entity, return stdClass
                 $entity = new stdClass();

@@ -195,6 +195,30 @@ abstract class DbStore extends Store implements StoreInterface
     }
 
     /**
+     * Get min value of a given column
+     * @param  string $column
+     * @return mixed
+     */
+    public function min($column)
+    {
+        return $this->transaction(function () use ($column) {
+            return $this->newQuery()->min($this->map($column));
+        });
+    }
+
+    /**
+     * Get max value of a given column
+     * @param  string $column
+     * @return mixed
+     */
+    public function max($column)
+    {
+        return $this->transaction(function () use ($column) {
+            return $this->newQuery()->max($this->map($column));
+        });
+    }
+
+    /**
      * Start a new query builder
      * @return \Illuminate\Database\Query\Builder
      */

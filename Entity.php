@@ -88,12 +88,6 @@ abstract class Entity
         return $this;
     }
 
-    #public function join($table, $one, $operator, $two)
-    #{
-    #    $this->store->join($table, $one, $operator, $two);
-        #return $this;
-    #}
-
     /**
      * Add a where clause to the query
      * @param  string  $column
@@ -248,6 +242,26 @@ abstract class Entity
     public function count($isTransaction = true)
     {
         return $this->store->count($isTransaction);
+    }
+
+    /**
+     * Get min value of a given column
+     * @param  string $column
+     * @return mixed
+     */
+    public function min($column)
+    {
+        return $this->store->min($column);
+    }
+
+    /**
+     * Get max value of a given column
+     * @param  string $column
+     * @return mixed
+     */
+    public function max($column)
+    {
+        return $this->store->max($column);
     }
 
     /**
@@ -793,6 +807,16 @@ abstract class Entity
         }
 
         return $this;
+    }
+
+    /**
+     * Represent this entity as a string
+     * @return string
+     */
+    public function toString()
+    {
+        $primary = $this->store->map($this->store->attributes('primary'), true);
+        return "entity $primary ".$this->$primary;
     }
 
     /**
