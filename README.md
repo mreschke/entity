@@ -50,6 +50,13 @@ $users = $this->vfi->user->all(); //or ->get() also works
 $users = $this->vfi->user->where('disabled', false)->get();
 $users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get();
 
+// Where In
+$users = $this->vfi->user->where('id', 'in', [1,2,3,4,5])->get();
+
+// Where null or not null
+$users = $this->vfi->user->where('completed', 'null', true)
+$users = $this->vfi->user->where('completed', 'null', false)
+
 // Selects and pluck
 $users = $this->vfi->user->select('id', 'name')->where('disabled', false)->all();
 $users = $this->vfi->user->select('id', 'name')->pluck('name', 'id');
@@ -430,5 +437,3 @@ Relationships
 http://iam/client/179/with('host','address')
 http://iam/client/179/host
 http://iam/client/179/address
-
-

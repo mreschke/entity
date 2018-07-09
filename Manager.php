@@ -160,6 +160,26 @@ class Manager
     }
 
     /**
+     * Create a new HTTP store instance of the given entity store
+     * @param  string $storeClassname entity store classname
+     * @param  array $config
+     * @return object
+     */
+    protected function createHttpStore($storeKey, $storeClassname, $config)
+    {
+        dd('Manager.php of mr/repo, createHttpStore()');
+        // FIXME, left off here
+
+        // Make a mongo connection
+        #$database = $config['database'];
+        #$mongo = new MongoClient("mongodb://".$config['host'].":".$config['port']);
+        #$connection = $mongo->$database;
+
+        // Create a new store instance
+        #return new $storeClassname($this, $storeKey, $connection);
+    }
+
+    /**
      * Get entity classname from entity key
      * @param  string $entityKey
      * @return string
