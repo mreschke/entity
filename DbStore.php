@@ -386,7 +386,9 @@ abstract class DbStore extends Store implements StoreInterface
     protected function addOrderByQuery($query)
     {
         if (isset($this->orderBy)) {
-            $query->orderBy($this->orderBy['column'], $this->orderBy['direction']);
+            foreach ($this->orderBy as $orderBy) {
+                $query->orderBy($orderBy['column'], $orderBy['direction']);
+            }
         } else {
             // Default order by
             if (isset($this->attributes['order_by'])) {

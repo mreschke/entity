@@ -137,6 +137,7 @@ abstract class Entity
      */
     public function orderBy($column, $direction = 'asc')
     {
+        dd('x');
         $this->store->orderBy($column, $direction);
         return $this;
     }

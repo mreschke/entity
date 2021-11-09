@@ -212,7 +212,11 @@ abstract class Store
      */
     public function orderBy($column, $direction = 'asc')
     {
-        $this->orderBy = [
+        // $this->orderBy = [
+        //     'column' => $this->map($column),
+        //     'direction' => $direction
+        // ];
+        $this->orderBy[] = [
             'column' => $this->map($column),
             'direction' => $direction
         ];
