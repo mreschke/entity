@@ -378,7 +378,6 @@ abstract class DbStore extends Store implements StoreInterface
                     }
                 } else {
                     // This works for laravel DB operators: =, !=, <>, >=, <=, <>, like
-                    dump($operator);
                     $query->where($column, $operator, $value);
                 }
             }
