@@ -362,9 +362,14 @@ abstract class DbStore extends Store implements StoreInterface
                 $operator = $where['operator'];
                 $value = $where['value'];
 
+                // Repo->Laravel operator conversion
+                if ($operator == '!like') $operator = 'not like';
+                if ($operator == 'not in') $operator = '!in';
+
                 if ($operator == 'in') {
-                    #$query->whereIn("$table.$column", $value);
                     $query->whereIn($column, $value);
+                } elseif ($operator == '!in') {
+                    $query->whereNotIn($column, $value);
                 } elseif ($operator == 'null') {
                     if ($value) {
                         $query->whereNull($column);
@@ -372,7 +377,8 @@ abstract class DbStore extends Store implements StoreInterface
                         $query->whereNotNull($column);
                     }
                 } else {
-                    #$query->where("$table.$column", $operator, $value);
+                    // This works for laravel DB operators: =, !=, <>, >=, <=, <>, like
+                    dump($operator);
                     $query->where($column, $operator, $value);
                 }
             }

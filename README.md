@@ -53,6 +53,15 @@ $users = $this->vfi->user->where('state', 'TX')->where('disabled', false)->get()
 // Where In
 $users = $this->vfi->user->where('id', 'in', [1,2,3,4,5])->get();
 
+// Where NOT In
+$users = $this->vfi->user->where('id', '!in', [1,2,3,4,5])->get();
+
+// Like
+$users = $this->vfi->user->where('name', 'like', 'bob%')->get();
+
+// NOT Like
+$users = $this->vfi->user->where('name', '!like', 'bob%')->get();
+
 // Where null or not null
 $users = $this->vfi->user->where('completed', 'null', true)
 $users = $this->vfi->user->where('completed', 'null', false)
@@ -71,6 +80,22 @@ $users = $this->vfi->user->where('disabled', false)->count();
 // Limiting records
 $users = $this->vfi->user->limit(0, 10)->get();
 ```
+
+All possible WHERE operators are:
+
+Note != and <> are the same thing
+```
+$operators = [
+    '=', '!=', '<>',
+    '>', '<', '>=', '<=',
+    'like', '!like', 'not like',
+    'in', '!in', 'not in',
+    'null'
+];
+```
+
+
+
 
 ## Joins
 ```php
