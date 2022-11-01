@@ -350,12 +350,12 @@ abstract class Store
     public function insert($entity, $data)
     {
         // Empty data
-        if (!isset($data) || count($data) == 0) {
+        if (!isset($data) || cnt($data) == 0) {
             return;
         }
 
         // Single Record assoc array
-        if (is_array($data) && array_keys($data) !== range(0, count($data) - 1)) {
+        if (is_array($data) && array_keys($data) !== range(0, cnt($data) - 1)) {
             // Convert to an entity object then save
             foreach ($data as $key => $value) {
                 $entity->$key = $value;
@@ -860,7 +860,7 @@ abstract class Store
      */
     protected function keyByPrimary($entities)
     {
-        if (count($entities) > 0) {
+        if (cnt($entities) > 0) {
             $keyBy = $this->getKeyBy();
             if (property_exists($entities[0], $keyBy)) {
                 // Re-key assoc array by primary
@@ -1028,7 +1028,7 @@ abstract class Store
         } else {
             // Store is inherited from another namespace
             $tmp = explode('\\', $parent);
-            $namespace = implode('\\', array_slice($tmp, 0, count($tmp)-3));
+            $namespace = implode('\\', array_slice($tmp, 0, cnt($tmp)-3));
         }
         return $namespace;
     }

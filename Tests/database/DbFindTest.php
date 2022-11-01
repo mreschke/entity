@@ -23,7 +23,7 @@ class DbFindTest extends TestCase
     {
         $clients = $this->fake->client->all();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 4);
+        $this->assertEquals(cnt($clients), 4);
         $this->assertSame((array) $clients[1], $this->client1Stub());
         $this->assertEquals(array_keys($clients->toArray()), [4, 2, 3, 1]); //default orderBy
         #dd($clients);
@@ -33,7 +33,7 @@ class DbFindTest extends TestCase
     {
         $clients = $this->fake->client()->showDisabled()->all();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 6);
+        $this->assertEquals(cnt($clients), 6);
         $this->assertSame((array) $clients[1], $this->client1Stub());
         $this->assertEquals(array_keys($clients->toArray()), [5, 4, 2, 6, 3, 1]); //default orderBy
         #dd($clients);

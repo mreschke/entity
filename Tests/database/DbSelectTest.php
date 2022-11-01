@@ -25,7 +25,7 @@ class DbSelectTest extends TestCase
     {
         $clients = $this->fake->client->select('id', 'name', 'disabled')->all();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 4);
+        $this->assertEquals(cnt($clients), 4);
         $this->assertInstanceOf('stdClass', $clients[1]);
         $this->assertSame((array) $clients[1], [
             "id" => "1",
@@ -39,7 +39,7 @@ class DbSelectTest extends TestCase
     {
         $clients = $this->fake->client->select('address.address', 'address.city')->with('address')->all();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 4);
+        $this->assertEquals(cnt($clients), 4);
         $this->assertInstanceOf('stdClass', $clients[1]);
         $this->assertInstanceOf('stdClass', $clients[1]->address);
         $this->assertSame((array) $clients[1]->address, [
@@ -53,7 +53,7 @@ class DbSelectTest extends TestCase
     {
         $clients = $this->fake->client->select('id', 'note', 'name', 'address.city', 'guid', 'address.address', 'disabled', 'address.note')->with('address')->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 4);
+        $this->assertEquals(cnt($clients), 4);
         $this->assertInstanceOf('stdClass', $clients[1]);
         $this->assertInstanceOf('stdClass', $clients[1]->address);
         $client = (array) $clients[1];

@@ -27,7 +27,7 @@ class DbWhereTest extends TestCase
         // Still a collection becuase not ->first()
         $client = $this->fake->client->where('guid', '100XB1C9-55E9-2EE2-9682-84101782417A')->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $client);
-        $this->assertEquals(count($client), 1);
+        $this->assertEquals(cnt($client), 1);
         $this->assertSame((array) $client[1], $this->client1Stub());
         #dd($client);
     }
@@ -44,7 +44,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('disabled', false)->where('addressID', 1)->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 1);
+        $this->assertEquals(cnt($clients), 1);
         $this->assertSame((array) $clients[1], $this->client1Stub());
         #dd($clients);
     }
@@ -53,7 +53,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('note', 'null', true)->showDisabled()->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 2);
+        $this->assertEquals(cnt($clients), 2);
         $this->assertEquals(array_keys($clients->toArray()), [6, 3]);
         #dd($clients);
     }
@@ -62,7 +62,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('note', 'null', false)->where('id', 1)->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 1);
+        $this->assertEquals(cnt($clients), 1);
         $this->assertSame((array) $clients[1], $this->client1Stub());
         #dd($clients);
     }
@@ -71,7 +71,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('note', 'in', ['Note one', 'Note two'])->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 2);
+        $this->assertEquals(cnt($clients), 2);
         $this->assertSame((array) $clients[1], $this->client1Stub());
     }
 
@@ -79,7 +79,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('note', 'in', ['Note one', 'Note two'])->where('id', 1)->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 1);
+        $this->assertEquals(cnt($clients), 1);
         $this->assertSame((array) $clients[1], $this->client1Stub());
         #dd($clients);
     }
@@ -88,7 +88,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('note', 'like', '%stuff%')->showDisabled()->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 2);
+        $this->assertEquals(cnt($clients), 2);
         $this->assertEquals(array_keys($clients->toArray()), [5, 4]);
         #dd($clients);
     }
@@ -97,7 +97,7 @@ class DbWhereTest extends TestCase
     {
         $clients = $this->fake->client->where('address.city', 'DallasToyota')->with('address')->get();
         $this->assertInstanceOf('Illuminate\Support\Collection', $clients);
-        $this->assertEquals(count($clients), 1);
+        $this->assertEquals(cnt($clients), 1);
         $this->assertInstanceOf('Mreschke\Repository\Fake\Address', $clients[1]->address);
         $this->assertSame((array) $clients[1]->address, $this->client1AddressStub());
         #dd((array) $clients[1]);
