@@ -478,17 +478,17 @@ abstract class DbStore extends Store implements StoreInterface
                 if (isset($entities->$primary)) {
                     // Smart insert or update based on primary key selection
                     $handle = $this->table()->where($primaryColumn, $entities->$primary);
-                    $found = !is_null($handle);
 
-                    // NO, adds a LIMIT 1 to all UPDATE statments which causes various issues
-                    // Don't need a first() anyhow, should be unique because we are WHERE primary=xyz
-                    #$found = !is_null($handle->first());
+                    // Check if record exists by executing TOP 1 on it (->first())
+                    $found = !is_null($handle->first());
+
+                    // Remove the limit 1 added from the ->first() above, for some reason it sticks
+                    // And causes an UPDATE xyz LIMIT 1 statement, which is usually fine, but errors on some MySQL platforms (PlanetScale)
+                    $handle->limit = null;
                 }
-
 
                 // Updating an existing record
                 if ($found) {
-
                     // Translate entity, removing any updatable=false entries
                     $record = $this->transformEntity($entities, true);
 
@@ -501,7 +501,6 @@ abstract class DbStore extends Store implements StoreInterface
                     // Update record
                     $handle->update($record);
                     $this->fireEvent('updated', $entities);
-
 
                 // Insert a new record
                 } else {
