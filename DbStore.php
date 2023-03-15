@@ -463,6 +463,7 @@ abstract class DbStore extends Store implements StoreInterface
 
             $this->table()->insert($records);
             $this->fireEvent('created', $entities);
+
         } else {
 
             // If $primary is null, remove it so auto-increment will work in PostgreSQL
@@ -472,19 +473,25 @@ abstract class DbStore extends Store implements StoreInterface
                 }
             }
 
-            // Save a single record
-            $record = $this->transformEntity($entities);
-
             if (isset($primary)) {
                 $found = false;
                 if (isset($entities->$primary)) {
                     // Smart insert or update based on primary key selection
                     $handle = $this->table()->where($primaryColumn, $entities->$primary);
-                    $found = !is_null($handle->first());
+                    $found = !is_null($handle);
+
+                    // NO, adds a LIMIT 1 to all UPDATE statments which causes various issues
+                    // Don't need a first() anyhow, should be unique because we are WHERE primary=xyz
+                    #$found = !is_null($handle->first());
                 }
 
+
+                // Updating an existing record
                 if ($found) {
-                    // Updating an existing record
+
+                    // Translate entity, removing any updatable=false entries
+                    $record = $this->transformEntity($entities, true);
+
                     if ($this->fireEvent('updating', $entities) === false) {
                         return false;
                     }
@@ -495,11 +502,17 @@ abstract class DbStore extends Store implements StoreInterface
                     $handle->update($record);
                     $this->fireEvent('updated', $entities);
 
+
+                // Insert a new record
                 } else {
-                    // Insert a new record
+
+                    // Translate entity, removing any save=false entries, but keeping any updatable=false entries
+                    $record = $this->transformEntity($entities);
+
                     if ($this->fireEvent('creating', $entities) === false) {
                         return false;
                     }
+
                     if ($increments) {
                         $entities->$primary = $this->table()->insertGetId($record);
                     } else {
@@ -509,6 +522,10 @@ abstract class DbStore extends Store implements StoreInterface
                 }
             } else {
                 // Table has no primary (probably a linkage table)
+                // Translate entity, removing any save=false entries, but keeping any updatable=false entries
+                $record = $this->transformEntity($entities);
+
+                // Insert into table
                 $this->table()->insert($record);
             }
         }

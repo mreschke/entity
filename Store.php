@@ -766,22 +766,36 @@ abstract class Store
     /**
      * Transform one entity object into one store model
      * @param  object $entity
+     * @param
      * @return array
      */
-    protected function transformEntity($entity)
+    protected function transformEntity($entity, $isUpdate = false)
     {
         if (isset($entity)) {
             $map = $this->attributes('map');
             $store = [];
-            foreach ($entity as $key => $value) {
-                foreach ($map as $property => $options) {
-                    if (isset($options['column']) && $property == $key) {
-                        if (!isset($options['save']) || $options['save'] == true) {
-                            $store[$options['column']] = $entity->$key;
-                            break;
-                        }
-                    }
-                }
+
+            foreach ($entity as $field => $value) {
+                // If no Store map exists for this entity field, skip tranlation for this field
+                if (!isset($map[$field])) continue;
+
+                // Get matching field from Store map
+                $options = $map[$field];
+
+                // If field has no matching db column, skip
+                if (!isset($options['column'])) continue;
+
+                // Get translated column name (actual db column name for this entity field name)
+                $column = $options['column'];
+
+                // Do not add if 'save' = false, not a real DB column
+                if (isset($options['save']) && $options['save'] === false) continue;
+
+                // Do not add if $isUpdate and 'updatable' = false
+                if ($isUpdate && isset($options['updatable']) && $options['updatable'] == false) continue;
+
+                // Translate field->column with value
+                $store[$column] = $value;
             }
             return $store;
         }

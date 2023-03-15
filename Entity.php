@@ -331,8 +331,6 @@ abstract class Entity
                     'value' => $value
                 ]);
 
-                #dd($this);
-
                 $this->fireEvent('attributes.saved', ['entity' => $this, 'key' => $key, 'value' => $value, 'original' => $originalValue]);
 
                 // Refresh attributes
@@ -559,7 +557,12 @@ abstract class Entity
                     'table' => isset($options['table']) ? $options['table'] : null,
                     'filter' => isset($options['filter']) ? true : false,
                     'likable' => isset($options['likable']) ? $options['likable'] : false,
+
+                    // Save=false means columns is removed from both INSERTS and UPDATES, its not a real db column
                     'save' => isset($options['save']) ? $options['save'] : true,
+
+                    // Updatable=false means column is removed from UPDATES, but not from inserts
+                    'updatable' => isset($options['updatable']) ? $options['updatable'] : true,
                 ];
             }
             return $properties;
