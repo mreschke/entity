@@ -952,8 +952,9 @@ abstract class Store
      */
     public function properties($property = null, $option = null)
     {
+        $map = $this->attributes('map');
         if (isset($property)) {
-            $map = $this->attributes('map');
+            // Get one property
             if (isset($map[$property])) {
                 if (isset($option) && isset($map[$property][$option])) {
                     return $map[$property][$option];
@@ -961,7 +962,8 @@ abstract class Store
                 return $map[$property];
             }
         } else {
-            return $this->attributes('map');
+            // Get all properties
+            return $map;
         }
     }
 

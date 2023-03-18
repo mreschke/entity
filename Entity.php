@@ -545,17 +545,61 @@ abstract class Entity
             $properties = [];
             foreach ($items as $property => $options) {
                 $properties[$property] = [
+                    // The entity (field) name
                     'property' => $property,
+
+                    // The database column name
                     'column' => isset($options['column']) ? $options['column'] : null,
+
+                    // The data type (string, json, date, datetime, integer, decimal, boolean)
                     'type' => isset($options['type']) ? $options['type'] : null,
+
+                    // Size, matches MySQL sizes, exammple decimal(8,2)=999999.99, size here would be 8
                     'size' => isset($options['size']) ? $options['size'] : null,
+
+                    // Max Numeric is used if this is an integer or decimal, used as a finer mechanism for the overflow.
+                    // If maxnumeric is not defined, overflow code uses 'size' option to determine max length of integer
+                    // But his is far more precise.  For example, unsignedMedium int max is 16,777,215 which is 8 chars
+                    // If I put 'size'=>8 this would still cause a DB error, because DB errors at 16,777,215+1 not 99,999,999
+                    'maxnumeric' => isset($options['maxnumeric']) ? $options['maxnumeric'] : null,
+
+                    // Decimal places, matches MySQL sizes, example decimal(8,2)=999999.99 size here would b 2
                     'round' => isset($options['round']) ? $options['round'] : null,
-                    'nullable' => isset($options['nullable']) ? $options['nullable'] : null,
+
+                    // Field can be null, should match your DB
+                    'nullable' => isset($options['nullable']) ? $options['nullable'] : false,
+
+                    // Default value if none defined
                     'default' => isset($options['default']) ? $options['default'] : null,
+
+                    // Trim the value during ->format()
                     'trim' => isset($options['trim']) ? $options['trim'] : true,
+
+                    // UC first words like (This Is First Upper) during ->format()
+                    'ucwords' => isset($options['ucwords']) ? $options['ucwords'] : false,
+
+                    // Lowercase the value during ->format()
+                    'lowercase' => isset($options['lowercase']) ? $options['lowercase'] : false,
+
+                    // Uppercase the value during ->format()
+                    'uppercase' => isset($options['uppercase']) ? $options['uppercase'] : false,
+
+                    // Allow multiline.  If NOT multiline, strip \r\n, \n and \r during ->format()
+                    'multiline' => isset($options['multiline']) ? $options['multiline'] : false,
+
+                    // Allow UTF8.  If FALSE, convert all non ASCII into ASCII
+                    'utf8' => isset($options['utf-8']) ? $options['utf-8'] : false,
+
+                    // If this is a RELATIONSHIP column, this is the relations entity, else null
                     'entity' => isset($options['entity']) ? $options['entity'] : null,
+
+                    // If this is a RELATIONSHIP column, this is the relations db table name, else null
                     'table' => isset($options['table']) ? $options['table'] : null,
+
+                    // Filterable (boolean), we can obey this as needed to allow filtering from UI or other locations
                     'filter' => isset($options['filter']) ? true : false,
+
+                    // Likable (boolean), if we search all fields, this instructs to use LIKE
                     'likable' => isset($options['likable']) ? $options['likable'] : false,
 
                     // Save=false means columns is removed from both INSERTS and UPDATES, its not a real db column
@@ -563,6 +607,11 @@ abstract class Entity
 
                     // Updatable=false means column is removed from UPDATES, but not from inserts
                     'updatable' => isset($options['updatable']) ? $options['updatable'] : true,
+
+                    // Autofix Overflow errors
+                    // If string, will trim to max length
+                    // If float or int, will set to max possibly float+decimal
+                    'fixoverflow' => isset($options['fixoverflow']) ? $options['fixoverflow'] : true,
                 ];
             }
             return $properties;
@@ -575,7 +624,10 @@ abstract class Entity
      */
     public function format()
     {
-        $map = $this->store->properties();
+        // Get map (using $this->properties not $this->store->properties) so we
+        // get all possible options and their default values;
+        $map = $this->properties();
+
         foreach ($map as $property => $options) {
 
             // No property type, no formatter
@@ -583,16 +635,18 @@ abstract class Entity
 
             // Get options and defaults
             $type = $options['type'];
-            $size = isset($options['size']) ? $options['size'] : null;
-            $round = isset($options['round']) ? $options['round'] : null;
-            $nullable = isset($options['nullable']) ? $options['nullable'] : false;
-            $default = isset($options['default']) ? $options['default'] : null;
-            $trim = isset($options['trim']) ? $options['trim'] : true;
-            $ucwords = isset($options['ucwords']) ? $options['ucwords'] : false;
-            $lowercase = isset($options['lowercase']) ? $options['lowercase'] : false;
-            $uppercase = isset($options['uppercase']) ? $options['uppercase'] : false;
-            $multiline = isset($options['multiline']) ? $options['multiline'] : false;
-            $utf8 = isset($options['utf-8']) ? $options['utf-8'] : false;
+            $size = $options['size'];
+            $maxnumeric = $options['maxnumeric'];
+            $round = $options['round'];
+            $nullable = $options['nullable'];
+            $default = $options['default'];
+            $trim = $options['trim'];
+            $ucwords = $options['ucwords'];
+            $lowercase = $options['lowercase'];
+            $uppercase = $options['uppercase'];
+            $multiline = $options['multiline'];
+            $utf8 = $options['utf8'];
+            $fixoverflow = $options['fixoverflow'];
 
             // Get properties value
             $value = $this->$property;
@@ -635,7 +689,13 @@ abstract class Entity
                     default:
                         $value = $default ?: ($nullable ? null : '');
                 }
+
             } else {
+
+                // If fixoverflow, this is the new fixed value
+                $overflowFixedValue = null;
+
+                // If datatype is json, convert value to json string to store in DB as string
                 if ($type == 'json') {
                     $value = json_encode($value);
                 }
@@ -659,7 +719,9 @@ abstract class Entity
                     $value = trim($value);
                 }
 
+                // Handle each type including an overflow fixed value
                 switch ($type) {
+
                     case "string":
                         if ($lowercase) {
                             $value = strtolower($value);
@@ -670,16 +732,45 @@ abstract class Entity
                         if ($ucwords) {
                             $value = ucwords(strtolower($value));
                         }
+
+                        // Fix string overflow by substr
+                        if ($fixoverflow && isset($size) && strlen($value) > $size) {
+                            $overflowFixedValue = substr($value, 0, $size);
+                        }
                         break;
+
                     case "datetime":
-                        $value = date("Y-m-d H:i:s", strtotime($value));
+                        if ($value) {
+                            $value = date("Y-m-d H:i:s", strtotime($value));
+                        } else {
+                            $value = null;
+                        }
                         break;
+
                     case "date":
-                        $value = date("Y-m-d", strtotime($value));
+                        if ($value) {
+                            $value = date("Y-m-d", strtotime($value));
+                        } else {
+                            $value = null;
+                        }
                         break;
+
                     case "integer":
                         $value = (int) $value;
+
+                        // Fix int overflow by setting in to max possibly value
+                        if ($fixoverflow) {
+                            // Use max numeric to determine maximum integer, more accurate that basic size (strlen) comparison
+                            if ($maxnumeric && $value > $maxnumeric) {
+                                $overflowFixedValue = $maxnumeric;
+
+                            // No maxnumeric defined, use basic size comparison
+                            } elseif (isset($size) && strlen($value) > $size) {
+                                $overflowFixedValue = (int) str_repeat(9, $size);
+                            }
+                        }
                         break;
+
                     case "decimal":
                         if (isset($size)) {
                             // Add one to offset the decimal point in calculations
@@ -691,16 +782,35 @@ abstract class Entity
                         } else {
                             $value = (float) $value;
                         }
+
+                        // Fix decimal overflow by setting in to max possibly value including decimals
+                        if ($fixoverflow && isset($size) && strlen($value) > $size) {
+                            $leftDec = $size - 1;
+                            if ($round) $leftDec -= $round;
+                            $overflowFixedValue = str_repeat(9, $leftDec);
+                            if ($round) {
+                                $overflowFixedValue .= ".";
+                                $overflowFixedValue .= str_repeat(9, $round);
+                            }
+                            $overflowFixedValue = (float) $overflowFixedValue;
+                        }
                         break;
                     case "boolean":
                         $value = (bool) $value;
                         break;
                 }
 
+                // Overflow detected (size of data > max allowed size)
+                // If we continue, the DB will error.  Attempt to autofix unless fixoverflow=false
                 if (isset($size) && strlen($value) > $size) {
-                    // Column size overflow
-                    $this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
-                    $value = substr($value, 0, $size);
+
+                    // Attempt to fix overflow
+                    if ($fixoverflow) {
+                        $value = $overflowFixedValue;
+                    } else {
+                        // No autofix, raise overflow event
+                        $this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
+                    }
                 }
             }
             $this->$property = $value;
