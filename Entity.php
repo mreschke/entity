@@ -692,6 +692,9 @@ abstract class Entity
 
             } else {
 
+                // Overflow found for this field
+                $overflowFound = false;
+
                 // If fixoverflow, this is the new fixed value
                 $overflowFixedValue = null;
 
@@ -733,9 +736,10 @@ abstract class Entity
                             $value = ucwords(strtolower($value));
                         }
 
-                        // Fix string overflow by substr
-                        if ($fixoverflow && isset($size) && strlen($value) > $size) {
-                            $overflowFixedValue = substr($value, 0, $size);
+                        // Detect string overflow
+                        if (isset($size) && strlen($value) > $size) {
+                            $overflowFound = true;
+                            if ($fixoverflow) $overflowFixedValue = substr($value, 0, $size);
                         }
                         break;
 
@@ -758,61 +762,60 @@ abstract class Entity
                     case "integer":
                         $value = (int) $value;
 
-                        // Fix int overflow by setting in to max possibly value
-                        if ($fixoverflow) {
-                            // Use max numeric to determine maximum integer, more accurate that basic size (strlen) comparison
-                            if ($maxnumeric && $value > $maxnumeric) {
-                                $overflowFixedValue = $maxnumeric;
-
-                            // No maxnumeric defined, use basic size comparison
-                            } elseif (isset($size) && strlen($value) > $size) {
-                                $overflowFixedValue = (int) str_repeat(9, $size);
-                            }
+                        // Detect integer overflow
+                        if (isset($maxnumeric) && $value > $maxnumeric) {
+                            $overflowFound = true;
+                            if ($fixoverflow) $overflowFixedValue = $maxnumeric;
+                        } elseif (isset($size) && strlen($value) > $size) {
+                            $overflowFound = true;
+                            if ($fixoverflow) $overflowFixedValue = (int) str_repeat(9, $size);
                         }
                         break;
 
                     case "decimal":
-                        if (isset($size)) {
-                            // Add one to offset the decimal point in calculations
-                            $options['size'] ++;
-                            $size ++;
-                        }
-                        if (isset($round)) {
-                            $value = round((float) $value, $round);
-                        } else {
-                            $value = (float) $value;
-                        }
+                        $value = (float) $value;
+                        if (isset($round)) $value = round($value, $round);
 
-                        // Fix decimal overflow by setting in to max possibly value including decimals
-                        if ($fixoverflow && isset($size) && strlen($value) > $size) {
-                            $leftDec = $size - 1;
+                        // Detect decimal overflow
+                        if (isset($size)) {
+                            $leftDec = $size;
                             if ($round) $leftDec -= $round;
-                            $overflowFixedValue = str_repeat(9, $leftDec);
-                            if ($round) {
-                                $overflowFixedValue .= ".";
-                                $overflowFixedValue .= str_repeat(9, $round);
+                            $max = str_repeat(9, $leftDec);
+                            if ($round) $max .= ".".str_repeat(9, $round);
+                            $max = (float) $max;
+                            $min = $max * -1;
+                            $negative = false;
+                            if ($value < 0) $negative = true;
+
+                            if (!$negative && $value > $max) {
+                                $overflowFound = true;
+                                if ($fixoverflow) $overflowFixedValue = $max;
+                            } elseif ($value < $min) {
+                                $overflowFound = true;
+                                if ($fixoverflow) $overflowFixedValue = $min;
                             }
-                            $overflowFixedValue = (float) $overflowFixedValue;
                         }
                         break;
+
                     case "boolean":
                         $value = (bool) $value;
                         break;
                 }
 
-                // Overflow detected (size of data > max allowed size)
-                // If we continue, the DB will error.  Attempt to autofix unless fixoverflow=false
-                if (isset($size) && strlen($value) > $size) {
-
-                    // Attempt to fix overflow
+                // Handle overflow
+                if ($overflowFound) {
+                    // Autofix overflow if allowed
                     if ($fixoverflow) {
                         $value = $overflowFixedValue;
                     } else {
-                        // No autofix, raise overflow event
+                        // Autofix not allowed on this column, raise event and attempt insert into DB
+                        // Most likely, DB will error
                         $this->fireEvent('overflow', array_merge($options, ['value' => $value, 'value_size' => strlen($value), 'repository' => $this->repository]));
                     }
                 }
             }
+
+            // Set new value (overflow fixex) on $this (the entity itself)
             $this->$property = $value;
         }
     }
