@@ -563,6 +563,11 @@ abstract class Entity
                     // If I put 'size'=>8 this would still cause a DB error, because DB errors at 16,777,215+1 not 99,999,999
                     'maxnumeric' => isset($options['maxnumeric']) ? $options['maxnumeric'] : null,
 
+                    // Signed means integer can be negative.  Changes how overflow detection and fix works
+                    // Most integers are unsigned (PKs and such), so default false.
+                    // Only applies to type='integer' columns
+                    'signedint' => isset($options['signedint']) ? $options['signedint'] : false,
+
                     // Decimal places, matches MySQL sizes, example decimal(8,2)=999999.99 size here would b 2
                     'round' => isset($options['round']) ? $options['round'] : null,
 
@@ -647,6 +652,7 @@ abstract class Entity
             $multiline = $options['multiline'];
             $utf8 = $options['utf8'];
             $fixoverflow = $options['fixoverflow'];
+            $signedint = $options['signedint'];
 
             // Get properties value
             $value = $this->$property;
@@ -762,13 +768,28 @@ abstract class Entity
                     case "integer":
                         $value = (int) $value;
 
+                        $negative = false;
+                        if ($value < 0) $negative = true;
+
                         // Detect integer overflow
-                        if (isset($maxnumeric) && $value > $maxnumeric) {
+                        if ($negative && !$signedint) {
+                            // Found a negative, but this is an unsigned int, set to 0
                             $overflowFound = true;
-                            if ($fixoverflow) $overflowFixedValue = $maxnumeric;
-                        } elseif (isset($size) && strlen($value) > $size) {
-                            $overflowFound = true;
-                            if ($fixoverflow) $overflowFixedValue = (int) str_repeat(9, $size);
+                            if ($fixoverflow) $overflowFixedValue = 0;
+                        } else {
+                            if (isset($maxnumeric) && !$negative && $value > $maxnumeric) {
+                                $overflowFound = true;
+                                if ($fixoverflow) $overflowFixedValue = $maxnumeric;
+                            } elseif (isset($maxnumeric) && $negative && $value < ($maxnumeric * -1)) {
+                                $overflowFound = true;
+                                if ($fixoverflow) $overflowFixedValue = ($maxnumeric * -1);
+                            } elseif (isset($size) && strlen($value) > $size) {
+                                $overflowFound = true;
+                                if ($fixoverflow) {
+                                    $overflowFixedValue = (int) str_repeat(9, $size);
+                                    if ($negative) $overflowFixedValue = $overflowFixedValue * -1;
+                                }
+                            }
                         }
                         break;
 
