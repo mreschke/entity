@@ -690,7 +690,7 @@ abstract class Store
      * @param  array $store
      * @return object
      */
-    protected function transformStore($store)
+    public function transformStore($store)
     {
         if (isset($store)) {
 
@@ -769,7 +769,7 @@ abstract class Store
      * @param
      * @return array
      */
-    protected function transformEntity($entity, $isUpdate = false)
+    public function transformEntity($entity, $isUpdate = false)
     {
         if (isset($entity)) {
             $map = $this->attributes('map');
