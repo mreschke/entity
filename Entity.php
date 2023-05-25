@@ -750,6 +750,7 @@ abstract class Entity
                         break;
 
                     case "datetime":
+                        if ($nullable && ($value == '0000-00-00 00:00:00' or $value == '0000-00-00')) $value = null;
                         if ($value) {
                             $value = date("Y-m-d H:i:s", strtotime($value));
                         } else {
@@ -758,6 +759,7 @@ abstract class Entity
                         break;
 
                     case "date":
+                        if ($nullable && ($value == '0000-00-00 00:00:00' or $value == '0000-00-00')) $value = null;
                         if ($value) {
                             $value = date("Y-m-d", strtotime($value));
                         } else {
