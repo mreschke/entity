@@ -444,8 +444,7 @@ abstract class DbStore extends Store implements StoreInterface
         $increments = $this->attributes('increments');
 
         if (is_array($entities)) {
-
-            // Save bulk records
+            // Insert BULK records, assumg the do NOT already exist in DB
             $records = [];
             foreach ($entities as $entity) {
                 // If $primary is null, remove it so auto-increment will work in PostgreSQL
@@ -465,26 +464,41 @@ abstract class DbStore extends Store implements StoreInterface
             $this->fireEvent('created', $entities);
 
         } else {
+            // Insert or Update a SINGLE record
 
-            // If $primary is null, remove it so auto-increment will work in PostgreSQL
+            // Table uses a primary key
+            $found = false;
             if (isset($primary)) {
+
+                // If $primary is null, remove it so auto-increment will work in PostgreSQL
                 if (!isset($entities->$primary) || ($increments && $entities->$primary == 0)) {
                     unset($entities->$primary);
                 }
-            }
 
-            if (isset($primary)) {
-                $found = false;
+                // Entity has an existing PK value already, determine if we should isnert or update
                 if (isset($entities->$primary)) {
+
                     // Smart insert or update based on primary key selection
                     $handle = $this->table()->where($primaryColumn, $entities->$primary);
 
-                    // Check if record exists by executing TOP 1 on it (->first())
-                    $found = !is_null($handle->first());
+                    if ($increments) {
+                        // If autoIncrement=True AND entity already has a PK value,
+                        // then assume its an UPDATE because the record must have
+                        // already been inserted or how would we know the PK?
+                        $found = true;
+                    } else {
+                        // Table has no autoIncrement, so our PK is probably set
+                        // manually with a human made id/key.  Therefore we need
+                        // to QUERY the existing data to determine if already
+                        // exists, to perform an insert vs update.
+                        // Check if record exists by executing TOP 1 on it (->first())
+                        // This actually executes a 'select id from table'
+                        $found = !is_null($handle->select($primaryColumn)->first());
 
-                    // Remove the limit 1 added from the ->first() above, for some reason it sticks
-                    // And causes an UPDATE xyz LIMIT 1 statement, which is usually fine, but errors on some MySQL platforms (PlanetScale)
-                    $handle->limit = null;
+                        // Remove the limit 1 added from the ->first() above, for some reason it sticks
+                        // And causes an UPDATE xyz LIMIT 1 statement, which is usually fine, but errors on some MySQL platforms (PlanetScale)
+                        $handle->limit = null;
+                    }
                 }
 
                 // Updating an existing record
