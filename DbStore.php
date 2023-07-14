@@ -1,9 +1,7 @@
 <?php namespace Mreschke\Repository;
 
 use DB;
-use stdClass;
 use Exception;
-use Illuminate\Support\Collection;
 use Illuminate\Database\ConnectionInterface;
 
 /**
@@ -224,8 +222,29 @@ abstract class DbStore extends Store implements StoreInterface
      */
     protected function newQuery()
     {
-        // Build new query
-        $query = $this->table();
+        // Build new query from builder parameters
+
+        // Get driver for this connection (mysql for example)
+        $driver = strtolower($this->connection->getConfig('driver'));
+
+        // Add in a USE INDEX() statement only if MySQL driver
+        if ($driver == 'mysql' && isset($this->useIndex)) {
+            // Get table name from attributes
+            $table = $this->attributes('table');
+
+            // Get indexes from ->useIndex query builder method
+            $indexes = implode(',', $this->useIndex);
+
+            // Build custom RAW FROM statement
+            $query = $this->connection->table(
+                DB::raw("$table USE INDEX ($indexes)")
+            );
+        } else {
+            // Use standard ->table from Laravel DB Query Builder
+            $query = $this->table();
+        }
+
+        // Add in all other query builder items
         $this->addSelectQuery($query);
         $this->addJoinQuery($query);
         $this->addFilterQuery($query);

@@ -29,6 +29,18 @@ abstract class Entity
     }
 
     /**
+     * Add USE INDEX() statement
+     * @param array
+     * @return void
+     */
+    public function useIndex($indexes)
+    {
+        $indexes = is_array($indexes) ? $indexes : func_get_args();
+        $this->store->useIndex($indexes);
+        return $this;
+    }
+
+    /**
      * Add a join to the query
      * @param  string $table
      * @param  string $one

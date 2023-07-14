@@ -32,6 +32,12 @@ abstract class Store
     protected $attributes;
 
     /**
+     * The USE INDEX statement
+     * @var array
+     */
+    protected $useIndex;
+
+    /**
      * The selected columns for this instance
      * @var array
      */
@@ -116,6 +122,18 @@ abstract class Store
             'operator' => $operator,
             'two' => $two
         ];
+        return $this;
+    }
+
+    /**
+     * Set a new USE INDEX() statement
+     * @param array $indexes
+     * @return $this
+     */
+    public function useIndex($indexes)
+    {
+        $indexes = is_array($indexes) ? $indexes : func_get_args();
+        $this->useIndex = $indexes;
         return $this;
     }
 
@@ -891,6 +909,7 @@ abstract class Store
      */
     protected function resetQuery()
     {
+        $this->useIndex = null;
         $this->select = null;
         $this->join = null;
         $this->where = null;

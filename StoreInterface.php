@@ -8,6 +8,12 @@
  */
 interface StoreInterface
 {
+    /**
+     * Set a new USE INDEX() statement
+     * @param array $indexes
+     * @return $this
+     */
+    public function useIndex($indexes);
 
     /**
      * Set a new select statement
