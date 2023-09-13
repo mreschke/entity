@@ -1,5 +1,6 @@
 <?php namespace Mreschke\Repository;
 
+use Cache;
 use Event;
 use stdClass;
 use Exception;
@@ -92,10 +93,16 @@ abstract class Store
     protected $limit;
 
     /**
-     * The final get function override
-     * @var string
+     * The with (include) statement
+     * @var array
      */
     protected $with;
+
+    /**
+     * The final get function override
+     * @var array
+     */
+    protected $cache;
 
     /**
      * Add a join to the query
@@ -292,6 +299,7 @@ abstract class Store
         return $this;
     }
 
+
     /**
      * Add a with relationship for the query
      * @param  string $properties
@@ -321,6 +329,27 @@ abstract class Store
     }
 
     /**
+     * Set the cache directive
+     * @param  string $key
+     * @param  int $expires
+     * @return $this
+     */
+    public function cache($key = null, $expires = 60) {
+        // If key is null, a auto-generated md5 key will be generated from all params in the finalizer
+        $this->cache['key'] = $key;
+        $this->cache['expires'] = $expires;
+    }
+
+    /**
+     * Get all records for an entity
+     * @param boolean $first = false use ->get() or ->first()
+     * @return \Illuminate\Support\Collection
+     */
+    public function get($first = false) {
+        // Must be implemented in each store (DbStore for example)
+    }
+
+    /**
      * Find a record by id or key
      * @param  mixed $id
      * @return object
@@ -332,7 +361,10 @@ abstract class Store
             $idColumn = $this->map($this->attributes('primary'), true);
             if (!is_numeric($id)) {
                 $idColumn = 'key';
-            } //fixme
+            }
+
+            // NO need to handle ->cache() here because this ends up calling
+            // The actual stores get() function which handles all caching
             return $this->where($idColumn, $id)->first();
         }
     }
@@ -343,7 +375,7 @@ abstract class Store
      */
     public function first()
     {
-        $results = $this->get($first = true);
+        $results = $this->get(true);
         return $results;
     }
 
@@ -910,6 +942,7 @@ abstract class Store
     protected function resetQuery()
     {
         $this->useIndex = null;
+        $this->distinct = null;
         $this->select = null;
         $this->join = null;
         $this->where = null;
@@ -918,6 +951,7 @@ abstract class Store
         $this->groupBy = null;
         $this->withCount = null;
         $this->limit = null;
+        $this->cache = null;
         //do NOT reset ->with here, we do it in mergeWiths properly
     }
 
@@ -983,6 +1017,62 @@ abstract class Store
         } else {
             // Get all properties
             return $map;
+        }
+    }
+
+    /**
+     * Get entire query as a nice to read array
+     * Good as md5(json_encode()) to ultra unique key for this exact query against this exact connection
+     * @return array
+     */
+    public function queryDetail()
+    {
+        $entityKey = $this->attributes('entity');
+        return [
+            'storeKey' => $this->storeKey,
+            'entityStoreClassname' => $this->manager->storeClassname($this->storeKey, $entityKey),
+            'entityKey' => $entityKey,
+            'entityClassname' => $this->manager->entityClassname($entityKey),
+            'table' => $this->attributes('table'),
+            'connectionConfig' => $this->manager->entityConfig($this->storeKey, $entityKey),
+            'queryBuilder' => [
+                'useIndex' => $this->useIndex,
+                'select' => $this->select,
+                'joins' => $this->join,
+                'where' => $this->where,
+                'filter' => $this->filter,
+                'orderBy' => $this->orderBy,
+                'groupBy' => $this->groupBy,
+                'limit' => $this->limit,
+                'withCount' => $this->withCount,
+                'with' => $this->with,
+            ],
+        ];
+    }
+
+    /**
+     * Get a unique md5 hash of this exact query against this exact connection
+     * @return string
+     */
+    public function queryHash()
+    {
+        return md5(json_encode($this->queryDetail()));
+    }
+
+    /**
+     * Build cache key AFTER query params are ready
+     * @return string
+     */
+    protected function buildCacheKey()
+    {
+        if (isset($this->cache)) {
+            if (!isset($this->cache['key'])) {
+                // Cache is enabled for this query and no specific cache key has been defined, build a unique one.
+                $this->cache['key'] = $this->queryHash();
+            }
+            $entitySlug = str_slug(str_replace('\\', '-', $queryDetail = $this->queryDetail()['entityClassname']));
+            $this->cache['key'] = 'repository/cache::'.$entitySlug.'::query::'.$this->cache['key'];
+            return $this->cache['key'];
         }
     }
 

@@ -1,6 +1,7 @@
 <?php namespace Mreschke\Repository;
 
 use DB;
+use Cache;
 use Exception;
 use Illuminate\Database\ConnectionInterface;
 
@@ -47,10 +48,24 @@ abstract class DbStore extends Store implements StoreInterface
 
         // This is a simple query
         return $this->transaction(function () use ($first) {
-            if ($first) {
-                return $this->newQuery()->first();
+            // Build the Illumunate\Database\Query\Builder (but don't execute yet)
+            $query = $this->newQuery();
+
+            // Check if caching is enabled for this query
+            // Now we have all our query params defined in $query, now the cache key will be unique
+            if (isset($this->cache)) {
+                // Cache key has to be based on ->first() or not
+                $cacheKey = $first ? $this->cache['key'].'::first' : $this->cache['key'].'::all';
+                return Cache::remember($cacheKey, $this->cache['expires'], function() use($query, $first) {
+                    if ($first) return $query->first();
+                    return $query->get();
+                });
             } else {
-                return $this->newQuery()->get();
+                if ($first) {
+                    return $query->first();
+                } else {
+                    return $query->get();
+                }
             }
         });
     }
@@ -66,8 +81,11 @@ abstract class DbStore extends Store implements StoreInterface
         $select = $this->select;
         $this->select = null;
 
+        // Trach original cache, as its reset on ->transaction();
+        $parentCache = null;
+
         // Run query with joins and wheres to get final initial base result
-        $entities = $this->transaction(function () use ($first) {
+        $entities = $this->transaction(function () use ($first, &$parentCache) {
 
             // Include each subentity join method (if exists)
             // Yes, even ->with() will call joinXyz AND mergeXyz if joinXyz exists
@@ -80,42 +98,94 @@ abstract class DbStore extends Store implements StoreInterface
                 }
             }
 
-            // Run query with any new joins
+            // Build the Illumunate\Database\Query\Builder (but don't execute yet)
             $query = $this->newQuery();
 
             // Select only main table or ids and duplicated columns between joins will collide
+            // This is a laravel DB level select, not this this DbStore level $select
             $query->select($this->attributes('table').'.*');
 
             if ($first) {
-
                 // If $first=true we can utilize database level ->first() BUT we still
                 // must return as collection for now, as merge methods below expect it
-                $results = $query->first();
+
+                if (isset($this->cache)) {
+                    $this->cache['key'] .= '::first';
+                    $parentCache = $this->cache;
+                    $results = Cache::remember($parentCache['key'], $this->cache['expires'], function() use($query) {
+                        return $query->first();
+                    });
+                } else {
+                    $results = $query->first();
+                }
                 if (isset($results)) {
                     return collect([$results]);
                 } else {
                     return $results;
                 }
+
             } else {
-                return $query->get();
+                if (isset($this->cache)) {
+                    $this->cache['key'] .= '::all';
+                    $parentCache = $this->cache;
+                    return Cache::remember($parentCache['key'], $this->cache['expires'], function() use($query) {
+                        return $query->get();
+                    });
+                } else {
+                    return $query->get();
+                }
+
             }
         });
 
+        // The above cache() only caches the parent entity, not all ->with() entities
+        // Below we merge in all ->with() entities, then cache the entire thing.
+        // So there ends up being 2 caches.  One for parent, one for parent+all ->with() merged in.
+
+        // Run new subentity query and merge with main query
         $results = null;
         if (isset($entities)) {
-            // Run new subentity query and merge with main query
-            if (isset($this->with)) {
-                foreach ($this->with as $with) {
-                    $method = 'merge'.studly_case($with);
-                    if (method_exists($this, $method)) {
-                        $this->$method($entities);
+
+            // Caching enabled
+            if (isset($parentCache)) {
+                $cacheKey = $parentCache['key'];
+                if (isset($this->with)) {
+                    $cacheKey .= '::with:';
+                    foreach ($this->with as $with) {
+                        $cacheKey .= ":".$with;
                     }
                 }
-            }
+                $results = Cache::remember($cacheKey, $parentCache['expires'], function() use(&$entities, $select) {
+                    if (isset($this->with)) {
+                        foreach ($this->with as $with) {
+                            $method = 'merge'.studly_case($with);
+                            if (method_exists($this, $method)) {
+                                // Dymamically call store function mergeXyz() method which merges in children ->with()
+                                $this->$method($entities);
+                            }
+                        }
+                    }
+                    // Select columns from collection (post query)
+                    return $this->selectCollection($entities, $this->map($select, true));
+                });
 
-            // Select columns from collection (post query)
-            $results = $this->selectCollection($entities, $this->map($select, true));
+            // NO caching
+            } else {
+                if (isset($this->with)) {
+                    foreach ($this->with as $with) {
+                        $method = 'merge'.studly_case($with);
+                        if (method_exists($this, $method)) {
+                            // Dymamically call store function mergeXyz() method which merges in children ->with()
+                            $this->$method($entities);
+                        }
+                    }
+                }
+                // Select columns from collection (post query)
+                $results = $this->selectCollection($entities, $this->map($select, true));
+            }
         }
+
+        // Reset ->with query builder
         $this->with = null;
 
         // We applied ->first() at database level for optimization, but we had
@@ -252,6 +322,12 @@ abstract class DbStore extends Store implements StoreInterface
         $this->addOrderByQuery($query);
         $this->addGroupByQuery($query);
         $this->addLimitQuery($query);
+
+        // Once all queries are added we can deduce a unique cache key from ->queryHash()
+        if (isset($this->cache)) {
+            $this->buildCacheKey();
+        }
+
         return $query;
     }
 

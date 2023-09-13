@@ -76,6 +76,14 @@ interface StoreInterface
     public function hasWith($with);
 
     /**
+     * Set the cache directive
+     * @param  string $key
+     * @param  int $expires
+     * @return $this
+     */
+    public function cache($key = null, $expires = 60);
+
+    /**
      * Find a record by id or key
      * @param  mixed $id
      * @return object

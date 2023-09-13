@@ -184,7 +184,7 @@ class Manager
      * @param  string $entityKey
      * @return string
      */
-    protected function entityClassname($entityKey)
+    public function entityClassname($entityKey)
     {
         return $this->namespace.'\\'.studly_case($entityKey);
     }
@@ -195,7 +195,7 @@ class Manager
      * @param  string $entityKey
      * @return string
      */
-    protected function storeClassname($storeKey, $entityKey)
+    public function storeClassname($storeKey, $entityKey)
     {
         $driver = $this->entityConfig($storeKey, $entityKey)['driver'];
         return $this->namespace.'\\Stores\\'.studly_case($driver).'\\'.studly_case($entityKey).'Store';

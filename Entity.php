@@ -199,6 +199,18 @@ abstract class Entity
     }
 
     /**
+     * Add a cache directive
+     * @param  string $key
+     * @param  int $expires
+     * @return $this
+     */
+    public function cache($key = null, $expires = 60)
+    {
+        $this->store->cache($key, $expires);
+        return $this;
+    }
+
+    /**
      * Find a record by id or key
      * @param  mixed $id = null
      * @return object
@@ -968,6 +980,24 @@ abstract class Entity
     {
         $primary = $this->store->map($this->store->attributes('primary'), true);
         return "entity $primary ".$this->$primary;
+    }
+
+    /**
+     * Show query details as an array
+     * @return array
+     */
+    public function queryDetails()
+    {
+        return $this->store->queryDetails();
+    }
+
+    /**
+     * Build unique query has baed on queryDetails(), great for cache keys
+     * @return string
+     */
+    public function queryHash()
+    {
+        return $this->store->queryHash();
     }
 
     /**
