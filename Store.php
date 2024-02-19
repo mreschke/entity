@@ -956,6 +956,19 @@ abstract class Store
     }
 
     /**
+     * Reset the query builder properties
+     * @return void
+     */
+    public function resetQueryBuilder()
+    {
+        // Why a duplicate of resetQuery above?  Because resetQuery()
+        // is protected and I have already extepded that protected class
+        // in several other classes.  But I DO want a public version, so
+        // I just made a second public version as to not break existing extensions
+        $this->resetQuery();
+    }
+
+    /**
      * Get one or all store attributes
      * @param  string $key = null
      * @return mixed
