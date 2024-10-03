@@ -263,9 +263,9 @@ abstract class Entity
      * @param boolean $isTransaction = true when true, this is a terminating function (will clear query builder), if false it will not clear query builder
      * @return integer|null
      */
-    public function count($isTransaction = true)
+    public function count($isTransaction = true, $countColumn = null)
     {
-        return $this->store->count($isTransaction);
+        return $this->store->count($isTransaction, $countColumn);
     }
 
     /**

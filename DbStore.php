@@ -235,7 +235,7 @@ abstract class DbStore extends Store implements StoreInterface
      * @param boolean $isTransaction = true when true, this is a terminating function (will clear query builder), if false it will not clear query builder
      * @return integer|null
      */
-    public function count($isTransaction = true)
+    public function count($isTransaction = true, $countColumn = null)
     {
         try {
             // You cannot COUNT at the same time you order_by or SQL errors with
@@ -243,10 +243,17 @@ abstract class DbStore extends Store implements StoreInterface
             // So CLEAR the default order_by before ->count()...to bypass auto-add in the ->addOrderByQuery() method
             unset($this->attributes['order_by']);
 
+            // Convert countColumn to actual table column name (table.real_column)
+            if (isset($countColumn)) $countColumn = $this->map($countColumn, false);
+
             if ($isTransaction) {
                 // Clear query builder after running counts (a terminating ->count() method like ->get())
-                $filteredRecords = $this->transaction(function () {
-                    return $this->newQuery()->count();
+                $filteredRecords = $this->transaction(function () use($countColumn) {
+                    if (isset($countColumn)) {
+                        return $this->newQuery()->count($countColumn);
+                    } else {
+                        return $this->newQuery()->count();
+                    }
                 }, false);
             } else {
                 // Do NOT clear query builder after running counts
