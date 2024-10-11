@@ -671,7 +671,7 @@ abstract class Store
                             if (!isset($table)) {
                                 $translated[] = $property;
                             } else {
-                                $translated[] = "$table.$property";
+                                $translated[] = "$entity.$property";
                             }
                             break;
                         }
